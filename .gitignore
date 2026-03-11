@@ -28,3 +28,10 @@ docker-data/
 
 # Build output
 build/
+
+# notes
+notes/
+
+secrets.json
+
+**/Migrations/
