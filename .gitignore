@@ -1,0 +1,30 @@
+# .NET
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# Node
+node_modules/
+dist/
+
+# Environment variables
+.env
+
+# VS Code settings
+.vscode/
+
+# Docker
+docker-data/
+
+# Build output
+build/
