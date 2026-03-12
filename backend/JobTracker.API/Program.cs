@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.UseUrls("http://0.0.0.0:5000");
+
 // Get database connection string from configuration or User Secrets
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -23,7 +25,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
