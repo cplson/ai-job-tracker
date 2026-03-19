@@ -16,7 +16,7 @@ public class UsersController : ControllerBase
     {
         return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password));
     }
-    
+
     public UsersController(AppDbContext context)
     {
         _context = context;

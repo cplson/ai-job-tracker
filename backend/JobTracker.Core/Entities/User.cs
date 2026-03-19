@@ -6,7 +6,8 @@ namespace JobTracker.Core.Entities;
 
 public class User
 {
-    public User(){
+    public User()
+    {
         Applications = new List<Application>();
         Resumes = new List<Resume>();
     }
