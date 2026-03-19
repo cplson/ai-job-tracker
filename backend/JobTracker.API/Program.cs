@@ -7,7 +7,7 @@ builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 // Get database connection string from configuration or User Secrets
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
+Console.WriteLine("Using connection string: " + connectionString);
 // Add services to the container
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
