@@ -12,11 +12,6 @@ public class UsersController : ControllerBase
 {
     private readonly AppDbContext _context;
 
-    private string HashPassword(string password)
-    {
-        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password));
-    }
-
     public UsersController(AppDbContext context)
     {
         _context = context;
@@ -41,10 +36,12 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<UserDto>> CreateUser(CreateUserDto dto)
     {
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
         var user = new User
         {
             Email = dto.Email,
-            PasswordHash = HashPassword(dto.Password)
+            PasswordHash = hashedPassword
         };
 
         _context.Users.Add(user);
@@ -57,5 +54,48 @@ public class UsersController : ControllerBase
         };
 
         return Ok(result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<UserDto>> UpdateUser(Guid id, UpdateUserDto dto)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+            return NotFound($"User with id {id} not found.");
+        
+        // Update email path
+        if (!string.IsNullOrWhiteSpace(dto.Email))
+        {
+            if (await _context.Users.AnyAsync(u => u.Email == dto.Email && u.Id != id))
+                return Conflict("Email already in use.");
+            user.Email = dto.Email;
+        }
+
+        // Update password path
+        if (!string.IsNullOrWhiteSpace(dto.Password))
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+        await _context.SaveChangesAsync();
+
+        var result = new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email
+        };
+
+        return Ok(result);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteUser(Guid id)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+            return NotFound($"User with id {id} not found.");
+
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+
+        return NoContent(); // 204
     }
 }
