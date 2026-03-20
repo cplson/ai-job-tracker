@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+
+    environment {}
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git(
+                    url: 'https://github.com/cplson/ai-job-tracker.git',
+                    branch: 'main',
+                    credentialsId: 'appserver'
+                )
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'dotnet restore JobTracker.sln'
+                sh 'dotnet build JobTracker.sln --configuration Release'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh 'dotnet test JobTracker.Tests/JobTracker.Tests.csproj --logger "trx;LogFileName=test_results.trx"'
+            }
+            post {
+                always {
+                    junit 'JobTracker.Tests/**/TestResults/*.trx'
+                }
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                sh './scripts/run-owasp-zap.sh' 
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t jobtracker-api:latest .'
+            }
+        }
+    }
+}

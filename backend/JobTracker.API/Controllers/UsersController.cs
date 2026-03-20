@@ -19,7 +19,7 @@ public class UsersController : ControllerBase
         _context = context;
     }
 
-       // GET: api/users
+    // GET: api/users
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
     {
