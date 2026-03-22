@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using JobTracker.Core.Entities;
 
+namespace JobTracker.API;
 public class JwtHelper
 {
     private readonly JwtSettings _settings;

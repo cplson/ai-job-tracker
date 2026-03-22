@@ -13,31 +13,23 @@ namespace JobTracker.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(AppDbContext context)
+    public UsersController(AppDbContext context, ILogger<UsersController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
-    // GET: api/users
-    // [HttpGet]
-    // public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
-    // {
-    //     var users = await _context.Users
-    //         .Select(u => new UserDto
-    //         {
-    //             Id = u.Id,
-    //             Email = u.Email
-    //         })
-    //         .ToListAsync();
-
-    //     return Ok(users);
-    // }
-
-    // POST: api/users
     [HttpPost]
-    public async Task<ActionResult<CreateUserDto>> Register(UserDto dto)
+    public async Task<IActionResult> Register(CreateUserDto dto, [FromServices] JwtHelper jwtHelper)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
+            return Conflict("Email already in use.");
+
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
         var user = new User
@@ -46,22 +38,35 @@ public class UsersController : ControllerBase
             PasswordHash = hashedPassword
         };
 
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to register user");
+            return StatusCode(500, "Internal server error.");
+        }
 
-        var result = new UserDto
+        var token = jwtHelper.GenerateToken(user);
+
+        var returnedUser = new ReturnUserDto
         {
             Id = user.Id,
             Email = user.Email
         };
-
-        return Ok(result);
+        
+        return Ok(new { token, returnedUser });
     }
 
     [Authorize]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(Guid id, UpdateUserDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
         if (userIdClaim == null)
@@ -77,21 +82,18 @@ public class UsersController : ControllerBase
 
         if (user == null)
             return NotFound($"User with id {id} not found.");
-           
-        // Update email path
-        if (!string.IsNullOrWhiteSpace(dto.Email))
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+        try
         {
-            if (await _context.Users.AnyAsync(u => u.Email == dto.Email && u.Id != loggedInUserId))
-                return Conflict("Email already in use.");
-            user.Email = dto.Email;
+            await _context.SaveChangesAsync();  
         }
-
-        // Update password path
-        if (!string.IsNullOrWhiteSpace(dto.Password))
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-
-        _context.Update(user);
-        await _context.SaveChangesAsync();
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update user");
+            return StatusCode(500, "Internal server error");
+        }
 
         return Ok();
     }
@@ -112,11 +114,20 @@ public class UsersController : ControllerBase
             return Unauthorized("Unauthorized due to id mismatch");
 
         var user = await _context.Users.FindAsync(loggedInUserId);
+
         if (user == null)
             return NotFound($"User with id {id} not found.");
 
-        _context.Users.Remove(user);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete user");
+            return StatusCode(500, "Internal server error");
+        }
 
         return NoContent();
     }
@@ -132,7 +143,13 @@ public class UsersController : ControllerBase
 
         var token = jwtHelper.GenerateToken(user);
 
-        return Ok(new { token });
+        var returnedUser = new ReturnUserDto
+        {
+            Id = user.Id,
+            Email = user.Email
+        };
+
+        return Ok(new { token, returnedUser });
     }
 
     // TESTING
