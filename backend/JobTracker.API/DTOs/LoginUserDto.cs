@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
+namespace JobTracker.API.DTOs;
 public class LoginUserDto
 {
     [Required]

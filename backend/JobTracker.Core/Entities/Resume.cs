@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.IO.Enumeration;
 
 namespace JobTracker.Core.Entities;
 
@@ -18,7 +19,7 @@ public class Resume
 
     public string ExtractedText { get; set; } = string.Empty;
 
-    public DateTime UploadedAt { get; } = DateTime.UtcNow;
+    public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
 
     [ForeignKey("UserId")]
     public User? User { get; set; }
