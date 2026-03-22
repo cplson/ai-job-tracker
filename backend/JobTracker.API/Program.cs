@@ -2,6 +2,7 @@ using JobTracker.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
@@ -20,6 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? throw new InvalidOperationException("JWT settings are not configured");
+
 if (string.IsNullOrWhiteSpace(jwtSettings.Key))
     throw new InvalidOperationException("JWT Key is not configured");
     
@@ -30,8 +32,24 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    // TESTING LOGS
+    // options.Events = new JwtBearerEvents
+    // {
+    //     OnMessageReceived = context =>
+    //     {
+    //         var authHeader = context.Request.Headers["Authorization"].ToString();
+    //         Console.WriteLine("AUTH HEADER: " + authHeader);
+    //         return Task.CompletedTask;
+    //     },
+    //     OnAuthenticationFailed = context =>
+    //     {
+    //         Console.WriteLine("FAILED: " + context.Exception.ToString());
+    //         return Task.CompletedTask;
+    //     }
+    // };
     options.TokenValidationParameters = new TokenValidationParameters
     {
+        NameClaimType = ClaimTypes.NameIdentifier,
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,

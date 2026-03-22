@@ -20,23 +20,23 @@ public class UsersController : ControllerBase
     }
 
     // GET: api/users
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
-    {
-        var users = await _context.Users
-            .Select(u => new UserDto
-            {
-                Id = u.Id,
-                Email = u.Email
-            })
-            .ToListAsync();
+    // [HttpGet]
+    // public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
+    // {
+    //     var users = await _context.Users
+    //         .Select(u => new UserDto
+    //         {
+    //             Id = u.Id,
+    //             Email = u.Email
+    //         })
+    //         .ToListAsync();
 
-        return Ok(users);
-    }
+    //     return Ok(users);
+    // }
 
     // POST: api/users
     [HttpPost]
-    public async Task<ActionResult<UserDto>> CreateUser(CreateUserDto dto)
+    public async Task<ActionResult<CreateUserDto>> Register(UserDto dto)
     {
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
@@ -60,12 +60,26 @@ public class UsersController : ControllerBase
 
     [Authorize]
     [HttpPut("{id}")]
-    public async Task<ActionResult<UserDto>> UpdateUser(Guid id, UpdateUserDto dto)
+    public async Task<IActionResult> UpdateUser(Guid id, UpdateUserDto dto)
     {
-        var user = await _context.Users.FindAsync(id);
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim == null)
+            return Unauthorized("Could not get users id from JWT");
+        
+        Console.WriteLine($"inside put endpoint: {userIdClaim.Value}");
+
+        if (!Guid.TryParse(userIdClaim.Value, out var loggedInUserId))
+            return Unauthorized();
+
+        if (id != loggedInUserId)
+            return Unauthorized("Unauthorized due to id mismatch");
+
+        var user = await _context.Users.FindAsync(loggedInUserId);
+
         if (user == null)
             return NotFound($"User with id {id} not found.");
-        
+           
         // Update email path
         if (!string.IsNullOrWhiteSpace(dto.Email))
         {
@@ -78,21 +92,19 @@ public class UsersController : ControllerBase
         if (!string.IsNullOrWhiteSpace(dto.Password))
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
+        _context.Update(user);
         await _context.SaveChangesAsync();
 
-        var result = new UserDto
-        {
-            Id = user.Id,
-            Email = user.Email
-        };
-
-        return Ok(result);
+        return Ok();
     }
 
     [Authorize]
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteUser(Guid id)
+    public async Task<IActionResult> DeleteUser(Guid id, UserDto dto)
     {
+        if (id != dto.Id)
+            return Unauthorized("Unauthorized request");
+
         var user = await _context.Users.FindAsync(id);
         if (user == null)
             return NotFound($"User with id {id} not found.");
