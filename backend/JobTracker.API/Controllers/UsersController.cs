@@ -67,8 +67,6 @@ public class UsersController : ControllerBase
         if (userIdClaim == null)
             return Unauthorized("Could not get users id from JWT");
         
-        Console.WriteLine($"inside put endpoint: {userIdClaim.Value}");
-
         if (!Guid.TryParse(userIdClaim.Value, out var loggedInUserId))
             return Unauthorized();
 
@@ -83,7 +81,7 @@ public class UsersController : ControllerBase
         // Update email path
         if (!string.IsNullOrWhiteSpace(dto.Email))
         {
-            if (await _context.Users.AnyAsync(u => u.Email == dto.Email && u.Id != id))
+            if (await _context.Users.AnyAsync(u => u.Email == dto.Email && u.Id != loggedInUserId))
                 return Conflict("Email already in use.");
             user.Email = dto.Email;
         }
@@ -100,19 +98,27 @@ public class UsersController : ControllerBase
 
     [Authorize]
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteUser(Guid id, UserDto dto)
+    public async Task<IActionResult> DeleteUser(Guid id)
     {
-        if (id != dto.Id)
-            return Unauthorized("Unauthorized request");
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
-        var user = await _context.Users.FindAsync(id);
+        if (userIdClaim == null)
+            return Unauthorized("Could not get users id from JWT");
+
+        if (!Guid.TryParse(userIdClaim.Value, out var loggedInUserId))
+            return Unauthorized();
+
+        if (id != loggedInUserId)
+            return Unauthorized("Unauthorized due to id mismatch");
+
+        var user = await _context.Users.FindAsync(loggedInUserId);
         if (user == null)
             return NotFound($"User with id {id} not found.");
 
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
 
-        return NoContent(); // 204
+        return NoContent();
     }
 
     [HttpPost("login")]
