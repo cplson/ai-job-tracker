@@ -32,7 +32,7 @@ public class Application
 
     public ApplicationStatus Status { get; set; } = ApplicationStatus.Draft;
 
-    public DateTime CreatedAt { get; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [ForeignKey("UserId")]
     public User? User { get; set; }

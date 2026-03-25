@@ -12,6 +12,7 @@
 using JobTracker.Infrastructure;
 using JobTracker.Core.Entities;
 using JobTracker.API.DTOs.Resumes;
+using JobTracker.API.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -21,23 +22,19 @@ namespace JobTracker.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // applies to all actions
 public class ResumesController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<ResumesController> _logger;
 
-    public ResumesController(AppDbContext context)
+    public ResumesController(AppDbContext context, ILogger<ResumesController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
-    // 🔧 Helper: Get logged-in user ID
-    private bool TryGetUserId(out Guid userId)
-    {
-        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return Guid.TryParse(claim, out userId);
-    }
-
-    // 🔄 Helper: Map entity → DTO
+    // Map entity -> DTO
     private static ReturnResumeDto MapToDto(Resume resume)
     {
         return new ReturnResumeDto
@@ -49,27 +46,15 @@ public class ResumesController : ControllerBase
     }
 
     // 📤 Upload Resume
-    [Authorize]
     [HttpPost]
     public async Task<ActionResult<ReturnResumeDto>> UploadResume([FromForm] CreateResumeDto dto)
     {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized();
+        var userId = JwtHelper.GetUserId(User);
 
         if (!ModelState.IsValid || dto.File == null || dto.File.Length == 0)
             return BadRequest("Valid file is required.");
 
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
-        if (!Directory.Exists(uploadsFolder))
-            Directory.CreateDirectory(uploadsFolder);
-
-        var fileName = Guid.NewGuid() + Path.GetExtension(dto.File.FileName);
-        var filePath = Path.Combine(uploadsFolder, fileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await dto.File.CopyToAsync(stream);
-        }
+        var filePath = await FileHelper.SaveFileAsync(dto.File);
 
         var resume = new Resume
         {
@@ -85,29 +70,24 @@ public class ResumesController : ControllerBase
     }
 
     // 📥 Get all resumes for current user
-    [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<IEnumerable<ReturnResumeDto>>> GetMyResumes()
     {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized();
+        Console.WriteLine("inside getResumes");
+        var userId = JwtHelper.GetUserId(User);
 
         var resumes = await _context.Resumes
             .Where(r => r.UserId == userId)
             .ToListAsync();
 
-        var result = resumes.Select(MapToDto);
-
-        return Ok(result);
+        return Ok(resumes.Select(MapToDto));
     }
 
     // 📄 Get single resume
-    [Authorize]
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     public async Task<ActionResult<ReturnResumeDto>> GetResume(Guid id)
     {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized();
+        var userId = JwtHelper.GetUserId(User);
 
         var resume = await _context.Resumes
             .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId);
@@ -119,12 +99,10 @@ public class ResumesController : ControllerBase
     }
 
     // ✏️ Update resume (re-upload file)
-    [Authorize]
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateResume(Guid id, [FromForm] UpdateResumeDto dto)
     {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized();
+        var userId = JwtHelper.GetUserId(User);
 
         if (!ModelState.IsValid || dto.File == null || dto.File.Length == 0)
             return BadRequest("Valid file is required.");
@@ -135,19 +113,11 @@ public class ResumesController : ControllerBase
         if (resume == null)
             return NotFound();
 
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+        // delete old file
+        FileHelper.DeleteFile(resume.FilePath);
 
-        var fileName = Guid.NewGuid() + Path.GetExtension(dto.File.FileName);
-        var filePath = Path.Combine(uploadsFolder, fileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await dto.File.CopyToAsync(stream);
-        }
-
-        // (Optional later) delete old file from disk
-
-        resume.FilePath = filePath;
+        // save new file
+        resume.FilePath = await FileHelper.SaveFileAsync(dto.File);
 
         await _context.SaveChangesAsync();
 
@@ -155,12 +125,10 @@ public class ResumesController : ControllerBase
     }
 
     // ❌ Delete resume
-    [Authorize]
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteResume(Guid id)
     {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized();
+        var userId = JwtHelper.GetUserId(User);
 
         var resume = await _context.Resumes
             .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId);

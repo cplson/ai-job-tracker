@@ -41,4 +41,16 @@ public class JwtHelper
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    public static Guid GetUserId(ClaimsPrincipal user)
+    {
+        var claim = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        Console.WriteLine("claim: ", claim);
+        if (claim == null || !Guid.TryParse(claim, out var userId))
+        {
+            throw new UnauthorizedAccessException("Invalid or missing user ID.");
+        }
+
+        return userId;
+    }
 }

@@ -67,16 +67,10 @@ public class UsersController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-
-        if (userIdClaim == null)
-            return Unauthorized("Could not get users id from JWT");
-        
-        if (!Guid.TryParse(userIdClaim.Value, out var loggedInUserId))
-            return Unauthorized();
+        var loggedInUserId = JwtHelper.GetUserId(User);
 
         if (id != loggedInUserId)
-            return Unauthorized("Unauthorized due to id mismatch");
+            return Forbid();
 
         var user = await _context.Users.FindAsync(loggedInUserId);
 
@@ -102,16 +96,13 @@ public class UsersController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        if (userIdClaim == null)
-            return Unauthorized("Could not get users id from JWT");
-
-        if (!Guid.TryParse(userIdClaim.Value, out var loggedInUserId))
-            return Unauthorized();
+        var loggedInUserId = JwtHelper.GetUserId(User);
 
         if (id != loggedInUserId)
-            return Unauthorized("Unauthorized due to id mismatch");
+            return Forbid();
 
         var user = await _context.Users.FindAsync(loggedInUserId);
 
