@@ -9,6 +9,18 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173") // Vite default
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials(); // optional (needed for cookies, not JWT)
+        });
+});
+
 builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 // Get database connection string from configuration or User Secrets
@@ -33,21 +45,6 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    // TESTING LOGS
-    // options.Events = new JwtBearerEvents
-    // {
-    //     OnMessageReceived = context =>
-    //     {
-    //         var authHeader = context.Request.Headers["Authorization"].ToString();
-    //         Console.WriteLine("AUTH HEADER: " + authHeader);
-    //         return Task.CompletedTask;
-    //     },
-    //     OnAuthenticationFailed = context =>
-    //     {
-    //         Console.WriteLine("FAILED: " + context.Exception.ToString());
-    //         return Task.CompletedTask;
-    //     }
-    // };
     options.TokenValidationParameters = new TokenValidationParameters
     {
         NameClaimType = ClaimTypes.NameIdentifier,
@@ -111,7 +108,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseCors("AllowFrontend");
 // app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

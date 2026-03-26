@@ -126,6 +126,7 @@ public class UsersController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginUserDto dto, [FromServices] JwtHelper jwtHelper)
     {
+        Console.WriteLine("incoming dto: ", dto);
         var user = await _context.Users
             .SingleOrDefaultAsync(u => u.Email == dto.Email);
 
@@ -139,7 +140,8 @@ public class UsersController : ControllerBase
             Id = user.Id,
             Email = user.Email
         };
-
+        Console.WriteLine("token: ", token);
+        Console.WriteLine("returnedUser: ", returnedUser);
         return Ok(new { token, returnedUser });
     }
 

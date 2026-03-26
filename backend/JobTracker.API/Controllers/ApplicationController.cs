@@ -23,7 +23,7 @@ public class ApplicationsController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet]
+    [HttpGet("me")]
     public async Task<IActionResult> GetAll()
     {
         var userId = JwtHelper.GetUserId(User);
