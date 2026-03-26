@@ -3,5 +3,17 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
-  ]
+  ],
+    "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["DOM", "ESNext"],
+    "jsx": "react-jsx",            // ✅ important for React 17+ JSX
+    "strict": true,
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["react", "react-dom"] // ✅ ensures JSX namespace is found
+  }
 }
