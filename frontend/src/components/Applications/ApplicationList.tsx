@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import type { ApplicationDto } from '../../types';
+import { Link } from 'react-router-dom';
 
 export default function ApplicationList() {
   const [applications, setApplications] = useState<ApplicationDto[]>([]);
@@ -19,8 +20,13 @@ export default function ApplicationList() {
 
   return (
     <div>
-      <h2 className="mb-4">My Applications</h2>
-
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2>My Applications</h2>
+        <Link to="/applications/new" className="btn btn-primary">
+          + New Application
+        </Link>
+      </div>
+      
       <div className="card">
         <div className="card-body">
           {applications.length === 0 ? (
