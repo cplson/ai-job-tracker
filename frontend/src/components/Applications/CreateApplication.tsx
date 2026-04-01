@@ -35,7 +35,7 @@ export default function CreateApplication() {
 
     try {
       await api.post('/applications', form);
-      navigate('/applications');
+      navigate('/applications', { state: { success: true } });
     } catch (err) {
       console.error(err);
       setError('Failed to create application');
