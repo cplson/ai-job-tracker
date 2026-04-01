@@ -19,12 +19,26 @@ export default function ResumeList() {
 
   return (
     <div>
-      <h2>My Resumes</h2>
-      <ul>
-        {resumes.map(r => (
-          <li key={r.id}>{r.fileName} (Uploaded: {new Date(r.uploadedAt).toLocaleString()})</li>
-        ))}
-      </ul>
+      <h2 className="mb-4">My Resumes</h2>
+
+      <div className="card">
+        <div className="card-body">
+          {resumes.length === 0 ? (
+            <p>No resumes uploaded.</p>
+          ) : (
+            <ul className="list-group">
+              {resumes.map(r => (
+                <li key={r.id} className="list-group-item d-flex justify-content-between">
+                  <span>{r.fileName}</span>
+                  <small className="text-muted">
+                    {new Date(r.uploadedAt).toLocaleString()}
+                  </small>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

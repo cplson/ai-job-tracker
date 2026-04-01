@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { UserLoginDto, LoginResponseDto } from '../../types';
-import LogoutButton from './LogoutButton';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -25,28 +24,38 @@ export default function Login() {
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-        /><br/>
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-        /><br/>
-        <button type="submit">Login</button>
-      </form>
+    <div className="container mt-5" style={{ maxWidth: '400px' }}>
+      <div className="card p-4 shadow">
+        <h3 className="mb-3 text-center">Login</h3>
 
-      <div>
-        <LogoutButton />
-    </div>
+        {error && <div className="alert alert-danger">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <input
+              type="email"
+              className="form-control"
+              placeholder="Email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="mb-3">
+            <input
+              type="password"
+              className="form-control"
+              placeholder="Password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+            />
+          </div>
+
+          <button className="btn btn-primary w-100" type="submit">
+            Login
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
