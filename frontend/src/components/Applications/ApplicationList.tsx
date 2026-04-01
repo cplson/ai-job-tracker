@@ -61,7 +61,11 @@ export default function ApplicationList() {
               </thead>
               <tbody>
                 {applications.map(app => (
-                  <tr key={app.id}>
+                  <tr
+                    key={app.id}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/applications/${app.id}`)}
+                  >
                     <td>{app.company}</td>
                     <td>{app.jobTitle}</td>
                     <td>{app.status}</td>

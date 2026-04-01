@@ -18,4 +18,5 @@ export interface ApplicationDto {
   company: string;
   jobTitle: string;
   status: string;
+  jobDescription?: string;
 }
