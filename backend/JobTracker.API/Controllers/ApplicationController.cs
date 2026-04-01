@@ -104,6 +104,7 @@ public class ApplicationsController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, UpdateApplicationDto dto)
     {
+        Console.WriteLine("inside Put endpoint.");
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 

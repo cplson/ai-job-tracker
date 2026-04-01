@@ -5,6 +5,7 @@ import ResumeList from './components/Resumes/ResumeList';
 import AppLayout from './components/Layout/AppLayout';
 import CreateApplication from './components/Applications/CreateApplication';
 import ApplicationDetails from './components/Applications/ApplicationDetails';
+import EditApplication from './components/Applications/EditApplication';
 
 const ProtectedRoute = ({ children }: { children: React.JSX.Element }) => {
   const token = localStorage.getItem('jwt');
@@ -29,6 +30,7 @@ function App() {
           <Route path="/applications" element={<ApplicationList />} />
           <Route path="/applications/new" element={<CreateApplication />} />
           <Route path="/applications/:id" element={<ApplicationDetails />} />
+          <Route path="/applications/:id/edit" element={<EditApplication />} />
           <Route path="/resumes" element={<ResumeList />} />
         </Route>
       </Routes>

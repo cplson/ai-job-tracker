@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { ApplicationDto } from '../../types';
 import BackButton from '../Common/BackButton';
@@ -9,6 +9,7 @@ export default function ApplicationDetails() {
   const [application, setApplication] = useState<ApplicationDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchApplication() {
@@ -34,6 +35,14 @@ export default function ApplicationDetails() {
     <div className="row">
         <div className="col-lg-8">
             <div className="card shadow mb-4">
+                <div className="d-flex justify-content-between mb-3">
+                    <button
+                        className="btn btn-outline-primary"
+                        onClick={() => navigate(`/applications/${application.id}/edit`)}
+                    >
+                        Edit
+                    </button>
+                </div>
             <div className="card-body">
                 <h3 className="mb-3">{application.jobTitle}</h3>
                 <h5 className="text-muted mb-3">{application.company}</h5>
@@ -50,7 +59,7 @@ export default function ApplicationDetails() {
                 </p>
             </div>
             </div>
-            <BackButton label="Back to Applications" />
+            <BackButton label="Back to Applications" fallbackPath="/applications" ignoreHistory />
         </div>
 
         {/* 🔥 Future AI section */}
