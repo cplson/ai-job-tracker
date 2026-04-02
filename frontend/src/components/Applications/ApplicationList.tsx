@@ -8,34 +8,39 @@ export default function ApplicationList() {
   const [applications, setApplications] = useState<ApplicationDto[]>([]);
   const location = useLocation()
   const navigate = useNavigate()
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [showSuccess, setShowSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (location.state?.success) {
-      setShowSuccess(true)
+useEffect(() => {
+  const success = location.state?.success;
+  if (success) {
+    if (success === 'created') setShowSuccess('Application created successfully');
+    else if (success === 'updated') setShowSuccess('Application updated successfully');
+    else if (success === 'deleted') setShowSuccess('Application deleted successfully');
 
-      navigate(location.pathname, {replace: true, state: {}})
+    navigate(location.pathname, { replace: true, state: {} });
+  } 
+    
+
+  async function fetchApplications() {
+    try {
+      const res = await api.get<ApplicationDto[]>('/applications/me');
+      setApplications(res.data);
+    } catch (err) {
+      console.error(err);
     }
-    async function fetchApplications() {
-      try {
-        const res = await api.get<ApplicationDto[]>('/applications/me');
-        setApplications(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    fetchApplications();
-  }, [location, navigate]);
+  }
+  fetchApplications();
+}, []);
 
   return (
     <div>
       {showSuccess && (
         <div className="alert alert-success alert-dismissible fade show" role="alert">
-          Application created successfully!
+          {showSuccess}
           <button
             type="button"
             className="btn-close"
-            onClick={() => setShowSuccess(false)}
+            onClick={() => setShowSuccess(null)}
           ></button>
         </div>
       )}

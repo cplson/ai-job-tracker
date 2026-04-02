@@ -1,99 +1,85 @@
-// src/components/Applications/CreateApplication.tsx
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import { useState } from "react";
+import api from "../../services/api";
+import SubmitButton from "../Common/SubmitButton";
 
-interface CreateApplicationDto {
+interface CreateApplicationForm {
   company: string;
   jobTitle: string;
   jobDescription: string;
+  status: string;
 }
 
 export default function CreateApplication() {
-  const navigate = useNavigate();
-
-  const [form, setForm] = useState<CreateApplicationDto>({
-    company: '',
-    jobTitle: '',
-    jobDescription: ''
+  const [form, setForm] = useState<CreateApplicationForm>({
+    company: "",
+    jobTitle: "",
+    jobDescription: "",
+    status: "Draft",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [error, setError] = useState('');
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
+  const handleSubmit = async () => {
+    setError("");
+    setLoading(true);
     try {
-      await api.post('/applications', form);
-      navigate('/applications', { state: { success: true } });
+      await api.post("/applications", form);
+      // navigate with success handled by SubmitButton
     } catch (err) {
       console.error(err);
-      setError('Failed to create application');
+      setError("Failed to create application");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="row justify-content-center">
-      <div className="col-md-6">
-        <div className="card shadow">
-          <div className="card-body">
-            <h3 className="mb-4">New Application</h3>
-
-            {error && <div className="alert alert-danger">{error}</div>}
-
-            <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label className="form-label">Company</label>
-                <input
-                  type="text"
-                  name="company"
-                  className="form-control"
-                  value={form.company}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Job Title</label>
-                <input
-                  type="text"
-                  name="jobTitle"
-                  className="form-control"
-                  value={form.jobTitle}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Job Description</label>
-                <textarea
-                  name="jobDescription"
-                  className="form-control"
-                  rows={4}
-                  value={form.jobDescription}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <button className="btn btn-primary w-100" type="submit">
-                Create Application
-              </button>
-            </form>
-          </div>
+    <div className="col-lg-8">
+      <h2>Create New Application</h2>
+      {error && <div className="alert alert-danger">{error}</div>}
+      <form  
+          onSubmit={async (e) => {
+        e.preventDefault();
+        await handleSubmit();
+      }}>
+        <div className="mb-3">
+          <label className="form-label">Company</label>
+          <input
+            className="form-control"
+            value={form.company}
+            onChange={(e) => setForm({ ...form, company: e.target.value })}
+          />
         </div>
-      </div>
+
+        <div className="mb-3">
+          <label className="form-label">Job Title</label>
+          <input
+            className="form-control"
+            value={form.jobTitle}
+            onChange={(e) => setForm({ ...form, jobTitle: e.target.value })}
+          />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Job Description</label>
+          <textarea
+            className="form-control"
+            value={form.jobDescription}
+            onChange={(e) =>
+              setForm({ ...form, jobDescription: e.target.value })
+            }
+          />
+        </div>
+
+        <SubmitButton
+          label="Create Application"
+          isLoading={loading}
+          fallbackPath="/applications"
+          successState="created"
+          type="submit"
+          onClick={handleSubmit}
+        />
+      </form>
     </div>
   );
 }

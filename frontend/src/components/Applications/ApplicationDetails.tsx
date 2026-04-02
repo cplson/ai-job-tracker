@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { ApplicationDto } from '../../types';
 import BackButton from '../Common/BackButton';
+import DeleteButton from '../Common/DeleteButton';
 
 export default function ApplicationDetails() {
   const { id } = useParams();
@@ -42,6 +43,18 @@ export default function ApplicationDetails() {
                     >
                         Edit
                     </button>
+                    <DeleteButton
+                        label="Delete Application"
+                        fallbackPath='/applications'
+                        successState='deleted'
+                        onDelete={async () => {
+                            try {
+                                await api.delete(`/applications/${application.id}`);
+                            } catch (err) {
+                                console.error(err);
+                                alert("Failed to delete application");
+                            }
+                        }} />
                 </div>
             <div className="card-body">
                 <h3 className="mb-3">{application.jobTitle}</h3>
