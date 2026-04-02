@@ -43,7 +43,7 @@ export default function DeleteButton({
   fallbackPath,
   successState,
   confirmMessage = "Are you sure you want to delete this?",
-  className = "btn btn-danger",
+  className = "btn btn-outline-danger",
 }: DeleteButtonProps) {
   const navigate = useNavigate();
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../services/api";
 import SubmitButton from "../Common/SubmitButton";
+import CancelButton from "../Common/CancelButton";
 
 interface UpdateApplicationForm {
   company: string;
@@ -89,13 +90,17 @@ export default function EditApplication() {
           />
         </div>
 
-        <SubmitButton
-          label="Update Application"
-          isLoading={loading}
-          fallbackPath="/applications"
-          successState="updated"
-          onClick={handleSubmit}
-        />
+        <div className="d-flex gap-2">
+          <SubmitButton
+            label="Update Application"
+            isLoading={loading}
+            fallbackPath="/applications"
+            successState="updated"
+            onClick={handleSubmit}
+            />
+
+          <CancelButton label="Back" fallbackPath={`/applications/${id}`} />
+        </div>
       </form>
     </div>
   );

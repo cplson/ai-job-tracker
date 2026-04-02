@@ -36,7 +36,7 @@ export default function ApplicationDetails() {
     <div className="row">
         <div className="col-lg-8">
             <div className="card shadow mb-4">
-                <div className="d-flex justify-content-between mb-3">
+                <div className="d-flex justify-content-end gap-2 m-3">
                     <button
                         className="btn btn-outline-primary"
                         onClick={() => navigate(`/applications/${application.id}/edit`)}
@@ -44,7 +44,7 @@ export default function ApplicationDetails() {
                         Edit
                     </button>
                     <DeleteButton
-                        label="Delete Application"
+                        label="Delete"
                         fallbackPath='/applications'
                         successState='deleted'
                         onDelete={async () => {

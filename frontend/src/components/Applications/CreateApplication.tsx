@@ -1,6 +1,7 @@
 import { useState } from "react";
 import api from "../../services/api";
 import SubmitButton from "../Common/SubmitButton";
+import CancelButton from "../Common/CancelButton";
 
 interface CreateApplicationForm {
   company: string;
@@ -71,14 +72,18 @@ export default function CreateApplication() {
           />
         </div>
 
-        <SubmitButton
-          label="Create Application"
-          isLoading={loading}
-          fallbackPath="/applications"
-          successState="created"
-          type="submit"
-          onClick={handleSubmit}
-        />
+        <div className="d-flex gap-2">
+          <SubmitButton
+            label="Create Application"
+            isLoading={loading}
+            fallbackPath="/applications"
+            successState="created"
+            type="submit"
+            onClick={handleSubmit}
+          />
+
+          <CancelButton fallbackPath="/applications" />
+        </div>
       </form>
     </div>
   );
