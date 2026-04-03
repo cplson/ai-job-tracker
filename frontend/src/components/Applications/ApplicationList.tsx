@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import type { ApplicationDto } from '../../types';
-import { Link } from 'react-router-dom';
 
 export default function ApplicationList() {
   const [applications, setApplications] = useState<ApplicationDto[]>([]);

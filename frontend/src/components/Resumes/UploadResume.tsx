@@ -47,7 +47,11 @@ export default function UploadResume() {
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          await handleSubmit();
+          try{
+              await handleSubmit();
+            } catch (err: any) {
+                console.log(err)
+            }
         }}
       >
         <div className="mb-3">

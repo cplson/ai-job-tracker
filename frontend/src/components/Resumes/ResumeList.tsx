@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 import DeleteButton from "../Common/DeleteButton";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 
 interface ResumeDto {
   id: string;
@@ -11,8 +12,18 @@ interface ResumeDto {
 export default function ResumeList() {
   const [resumes, setResumes] = useState<ResumeDto[]>([]);
   const [error, setError] = useState("");
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [showSuccess, setShowSuccess] = useState<string | null>(null);
+  // const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
+    const success = location.state?.success;
+    if (success === "created") setShowSuccess("Resume uploaded successfully");
+    else if (success === "deleted") setShowSuccess("Resume deleted successfully");
+
+    navigate(location.pathname, { replace: true, state: {} });
+
     async function fetchResumes() {
       try {
         const res = await api.get<ResumeDto[]>("/resumes/me");
@@ -28,7 +39,22 @@ export default function ResumeList() {
 
   return (
     <div className="col-lg-8">
-      <h2>My Resumes</h2>
+          {showSuccess && (
+            <div className="alert alert-success alert-dismissible fade show" role="alert">
+              {showSuccess}
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setShowSuccess(null)}
+              ></button>
+            </div>
+          )}
+      <div className="d-flex justify-content-between mb-3">
+        <h2>My Resumes</h2>
+        <Link to="/resumes/upload" className="btn btn-primary">
+          + Upload Resume
+        </Link>
+      </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
@@ -56,7 +82,13 @@ export default function ResumeList() {
                         fallbackPath="/resumes"
                         successState="deleted"
                         onDelete={async () => {
-                          await api.delete(`/delete/${r.id}`)
+                          try{
+                            await api.delete(`/resumes/${r.id}`)
+                            setShowSuccess("Resume deleted successfully")
+                            setResumes(prev => prev.filter(resume => resume.id !== r.id));
+                          } catch (err: any){
+                            console.log(err)
+                          }
                         }}
                       />
                     </td>
