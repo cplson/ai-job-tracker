@@ -37,6 +37,26 @@ export default function ResumeList() {
     fetchResumes();
   }, []);
 
+  const handleDownload = async (id: string, fileName: string) => {
+    try {
+      const res = await api.get(`/resumes/${id}/download`, {
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="col-lg-8">
           {showSuccess && (
@@ -69,14 +89,21 @@ export default function ResumeList() {
                   <th>File Name</th>
                   <th>Uploaded</th>
                   <th></th>
+                  {/* <th></th> */}
                 </tr>
               </thead>
               <tbody>
                 {resumes.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.fileName}</td>
+                  <tr key={r.id} className="align-middle">
+                    <td>📄 {r.fileName}</td>
                     <td>{new Date(r.uploadedAt).toLocaleString()}</td>
-                    <td>
+                    <td className="d-flex gap-2">
+                      <button
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={() => handleDownload(r.id, r.fileName)}
+                      >
+                        Download
+                      </button>
                       <DeleteButton
                         label="Delete"
                         fallbackPath="/resumes"
