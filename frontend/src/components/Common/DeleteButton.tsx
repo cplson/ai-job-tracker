@@ -1,40 +1,12 @@
-// import React from "react";
-
-// interface DeleteButtonProps {
-//   label?: string;
-//   onDelete: () => void; 
-//   confirmMessage?: string; 
-//   className?: string; 
-// }
-
-// export default function DeleteButton({
-//   label = "Delete",
-//   onDelete,
-//   confirmMessage = "Are you sure you want to delete this?",
-//   className = "btn btn-danger",
-// }: DeleteButtonProps) {
-//   const handleClick = () => {
-//     if (window.confirm(confirmMessage)) {
-//       onDelete();
-//     }
-//   };
-
-//   return (
-//     <button className={className} onClick={handleClick}>
-//       {label}
-//     </button>
-//   );
-// }
-
+// components/Common/DeleeButton.tsx
 import { useNavigate } from "react-router-dom";
+import Button from "./Button";
 
 interface DeleteButtonProps {
   label?: string;
-  onDelete: () => Promise<void>; // async delete function
-  fallbackPath?: string;          // path to navigate after delete
-  successState?: string;          // what to signal to next page
-  confirmMessage?: string;
-  className?: string;
+  onDelete: () => Promise<void>;
+  fallbackPath?: string;
+  successState?: string;
 }
 
 export default function DeleteButton({
@@ -42,30 +14,24 @@ export default function DeleteButton({
   onDelete,
   fallbackPath,
   successState,
-  confirmMessage = "Are you sure you want to delete this?",
-  className = "btn btn-outline-danger",
 }: DeleteButtonProps) {
   const navigate = useNavigate();
 
-  const handleClick = async () => {
-    if (!window.confirm(confirmMessage)) return;
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this?")) return;
 
-    try {
-      await onDelete();
+    await onDelete();
 
-      // Navigate to fallbackPath with success state
-      if (fallbackPath && successState) {
-        navigate(fallbackPath, { state: { success: successState } });
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete.");
+    if (fallbackPath && successState) {
+      navigate(fallbackPath, { state: { success: successState } });
     }
   };
 
   return (
-    <button className={className} onClick={handleClick}>
-      {label}
-    </button>
+    <Button
+      label={label}
+      variant="outline-danger"
+      onClick={handleDelete}
+    />
   );
 }

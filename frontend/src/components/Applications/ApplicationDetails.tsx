@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import api from '../../services/api';
 import type { ApplicationDto } from '../../types';
 import BackButton from '../Common/BackButton';
 import DeleteButton from '../Common/DeleteButton';
+import EditButton from '../Common/EditButton';
 
 export default function ApplicationDetails() {
   const { id } = useParams();
   const [application, setApplication] = useState<ApplicationDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchApplication() {
@@ -24,7 +24,6 @@ export default function ApplicationDetails() {
         setLoading(false);
       }
     }
-
     fetchApplication();
   }, [id]);
 
@@ -37,25 +36,15 @@ export default function ApplicationDetails() {
         <div className="col-lg-8">
             <div className="card shadow mb-4">
                 <div className="d-flex justify-content-end gap-2 m-3">
-                    <button
-                        className="btn btn-outline-primary"
-                        onClick={() => navigate(`/applications/${application.id}/edit`)}
-                    >
-                        Edit
-                    </button>
-                    <DeleteButton
-                        label="Delete"
-                        fallbackPath='/applications'
-                        successState='deleted'
-                        onDelete={async () => {
-                            try {
-                                await api.delete(`/applications/${application.id}`);
-                            } catch (err) {
-                                console.error(err);
-                                alert("Failed to delete application");
-                            }
-                        }} />
-                </div>
+                <EditButton to={`/applications/${application.id}/edit`} />
+                <DeleteButton
+                    fallbackPath="/applications"
+                    successState="deleted"
+                    onDelete={async () => {
+                    await api.delete(`/applications/${application.id}`);
+                    }}
+                />
+            </div>
             <div className="card-body">
                 <h3 className="mb-3">{application.jobTitle}</h3>
                 <h5 className="text-muted mb-3">{application.company}</h5>

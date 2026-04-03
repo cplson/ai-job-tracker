@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import SubmitButton from "../Common/SubmitButton";
 import CancelButton from "../Common/CancelButton";
@@ -19,13 +20,14 @@ export default function CreateApplication() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async () => {
     setError("");
     setLoading(true);
     try {
       await api.post("/applications", form);
-      // navigate with success handled by SubmitButton
+      navigate("/applications", {state: {success: "created"}})
     } catch (err) {
       console.error(err);
       setError("Failed to create application");
@@ -76,10 +78,6 @@ export default function CreateApplication() {
           <SubmitButton
             label="Create Application"
             isLoading={loading}
-            fallbackPath="/applications"
-            successState="created"
-            type="submit"
-            onClick={handleSubmit}
           />
 
           <CancelButton fallbackPath="/applications" />

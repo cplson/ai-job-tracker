@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import SubmitButton from "../Common/SubmitButton";
 import CancelButton from "../Common/CancelButton";
@@ -21,8 +21,8 @@ export default function EditApplication() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  // Load existing application
   useEffect(() => {
     async function fetchApplication() {
       try {
@@ -42,12 +42,13 @@ export default function EditApplication() {
     if (id) fetchApplication();
   }, [id]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
+    e.preventDefault();
     setError("");
     setLoading(true);
     try {
       await api.put(`/applications/${id}`, form);
-      // navigate with success handled by SubmitButton
+      navigate("/applications", {state: { success: "updated" }})
     } catch (err) {
       console.error(err);
       setError("Failed to update application");
@@ -60,7 +61,7 @@ export default function EditApplication() {
     <div className="col-lg-8">
       <h2>Edit Application</h2>
       {error && <div className="alert alert-danger">{error}</div>}
-      <form>
+      <form onSubmit={handleSubmit}>
         <div className="mb-3">
           <label className="form-label">Company</label>
           <input
@@ -92,11 +93,8 @@ export default function EditApplication() {
 
         <div className="d-flex gap-2">
           <SubmitButton
-            label="Update Application"
+            label="Update"
             isLoading={loading}
-            fallbackPath="/applications"
-            successState="updated"
-            onClick={handleSubmit}
             />
 
           <CancelButton label="Back" fallbackPath={`/applications/${id}`} />
