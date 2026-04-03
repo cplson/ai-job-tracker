@@ -14,4 +14,5 @@ public class UpdateApplicationDto
     public string? JobDescription { get; set; }
 
     public ApplicationStatus? Status { get; set; }
+    public Guid? ResumeId { get; set; }
 }

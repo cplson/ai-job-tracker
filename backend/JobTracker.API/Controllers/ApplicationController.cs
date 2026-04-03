@@ -31,11 +31,12 @@ public class ApplicationsController : ControllerBase
         var apps = await _context.Applications
             .Where(a => a.UserId == userId)
             .OrderByDescending(a => a.CreatedAt)
-            .Select(a => new ApplicationListDto
+            .Select(a => new ApplicationDetailDto
             {
                 Id = a.Id,
                 Company = a.Company,
                 JobTitle = a.JobTitle,
+                JobDescription = a.JobDescription,
                 Status = a.Status,
                 CreatedAt = a.CreatedAt
             })
@@ -58,7 +59,8 @@ public class ApplicationsController : ControllerBase
                 JobTitle = a.JobTitle,
                 JobDescription = a.JobDescription,
                 Status = a.Status,
-                CreatedAt = a.CreatedAt
+                CreatedAt = a.CreatedAt,
+                ResumeId = a.ResumeId
             })
             .FirstOrDefaultAsync();
 
@@ -83,7 +85,8 @@ public class ApplicationsController : ControllerBase
             Company = dto.Company,
             JobTitle = dto.JobTitle,
             JobDescription = dto.JobDescription,
-            Status = dto.Status ?? ApplicationStatus.Draft
+            Status = dto.Status ?? ApplicationStatus.Draft,
+            ResumeId = dto.ResumeId
         };
 
         _context.Applications.Add(app);
@@ -120,6 +123,7 @@ public class ApplicationsController : ControllerBase
         if (dto.JobTitle != null) app.JobTitle = dto.JobTitle;
         if (dto.JobDescription != null) app.JobDescription = dto.JobDescription;
         if (dto.Status.HasValue) app.Status = dto.Status.Value;
+        if (dto.ResumeId != null) app.ResumeId = dto.ResumeId;
 
         try
         {

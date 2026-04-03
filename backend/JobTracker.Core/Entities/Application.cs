@@ -38,4 +38,6 @@ public class Application
     public User? User { get; set; }
 
     public ICollection<AIJob> AIJobs { get; private set; }
+    public Guid? ResumeId { get; set; }
+    public Resume? Resume { get; set; }
 }

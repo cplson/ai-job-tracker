@@ -15,7 +15,6 @@ export default function ResumeList() {
   const location = useLocation()
   const navigate = useNavigate()
   const [showSuccess, setShowSuccess] = useState<string | null>(null);
-  // const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     const success = location.state?.success;

@@ -1,26 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import SubmitButton from "../Common/SubmitButton";
 import CancelButton from "../Common/CancelButton";
-
-interface CreateApplicationForm {
-  company: string;
-  jobTitle: string;
-  jobDescription: string;
-  status: string;
-}
+import { ResumeDto, CreateApplicationForm } from "../../types";
 
 export default function CreateApplication() {
+
   const [form, setForm] = useState<CreateApplicationForm>({
     company: "",
     jobTitle: "",
     jobDescription: "",
     status: "Draft",
+    resumeId: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [resumes, setResumes] = useState<ResumeDto[]>([]);
+
+  useEffect(() => {
+  async function fetchResumes() {
+    try {
+      const res = await api.get<ResumeDto[]>('/resumes/me');
+      setResumes(res.data);
+    } catch (err) {
+      console.error("Failed to fetch resumes", err);
+    }
+  }
+  fetchResumes();
+}, []);
 
   const handleSubmit = async () => {
     setError("");
@@ -41,9 +50,9 @@ export default function CreateApplication() {
       <h2>Create New Application</h2>
       {error && <div className="alert alert-danger">{error}</div>}
       <form  
-          onSubmit={async (e) => {
-        e.preventDefault();
-        await handleSubmit();
+        onSubmit={async (e) => {
+          e.preventDefault();
+          await handleSubmit();
       }}>
         <div className="mb-3">
           <label className="form-label">Company</label>
@@ -72,6 +81,22 @@ export default function CreateApplication() {
               setForm({ ...form, jobDescription: e.target.value })
             }
           />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Link Resume</label>
+          <select
+            className="form-select"
+            value={form.resumeId || ""}
+            onChange={(e) => setForm({ ...form, resumeId: e.target.value })}
+          >
+            <option value="">-- None --</option>
+            {resumes.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.fileName}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="d-flex gap-2">

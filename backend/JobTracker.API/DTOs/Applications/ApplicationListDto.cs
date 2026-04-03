@@ -7,4 +7,6 @@ public class ApplicationListDto
     public string JobTitle { get; set; } = string.Empty;
     public ApplicationStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
+    public Guid? ResumeId { get; set; }
+    public string? ResumeFileName { get; set; }
 }

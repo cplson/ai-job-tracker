@@ -16,4 +16,5 @@ public class CreateApplicationDto
     public string JobDescription { get; set; } = string.Empty;
 
     public ApplicationStatus? Status { get; set; } // optional override
+    public Guid? ResumeId { get; set; }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../services/api';
-import type { ApplicationDto } from '../../types';
+import type { ApplicationDto, ResumeDto } from '../../types';
 import BackButton from '../Common/BackButton';
 import DeleteButton from '../Common/DeleteButton';
 import EditButton from '../Common/EditButton';
@@ -11,18 +11,29 @@ export default function ApplicationDetails() {
   const [application, setApplication] = useState<ApplicationDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [resume, setResume] = useState<ResumeDto | null>(null);
 
+  // TO DO - LOW PRIORITY: update backend get application to return the 
+  //                resume with it, eliminating the need for an extra api request
   useEffect(() => {
     async function fetchApplication() {
       try {
-        const res = await api.get<ApplicationDto>(`/applications/${id}`);
-        setApplication(res.data);
+        const appRes = await api.get<ApplicationDto>(`/applications/${id}`);
+        setApplication(appRes.data);
+
+        if (appRes.data.resumeId) {
+          const res = await api.get<ResumeDto>(
+            `/resumes/${appRes.data.resumeId}`
+          );
+          setResume(res.data);
+        }
       } catch (err) {
         console.error(err);
         setError('Failed to load application');
       } finally {
         setLoading(false);
       }
+
     }
     fetchApplication();
   }, [id]);
@@ -59,7 +70,20 @@ export default function ApplicationDetails() {
                 <p style={{ whiteSpace: 'pre-wrap' }}>
                 {application.jobDescription || 'No description provided.'}
                 </p>
-            </div>
+                {resume && (
+                  <div className="mb-3">
+                    <h5>Resume</h5>
+                    <a 
+                      href={resume.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn btn-outline-secondary"
+                    >
+                      Download / View Resume
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
             <BackButton label="Back to Applications" fallbackPath="/applications" ignoreHistory />
         </div>

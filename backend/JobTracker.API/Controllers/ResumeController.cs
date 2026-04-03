@@ -22,7 +22,7 @@ namespace JobTracker.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // applies to all actions
+[Authorize]
 public class ResumesController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -34,7 +34,6 @@ public class ResumesController : ControllerBase
         _logger = logger;
     }
 
-    // Map entity -> DTO
     private static ReturnResumeDto MapToDto(Resume resume)
     {
         return new ReturnResumeDto
@@ -73,7 +72,6 @@ public class ResumesController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<IEnumerable<ReturnResumeDto>>> GetMyResumes()
     {
-        Console.WriteLine("inside getResumes");
         var userId = JwtHelper.GetUserId(User);
 
         var resumes = await _context.Resumes
@@ -152,14 +150,11 @@ public class ResumesController : ControllerBase
             .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId);
 
         if (resume == null)
-        {
             return NotFound();
-        }
-
-        Console.WriteLine("resume: ", resume);
 
         if (!System.IO.File.Exists(resume.FilePath))
             return NotFound("File not found on server.");
+            
 
         var fileBytes = await System.IO.File.ReadAllBytesAsync(resume.FilePath);
         var fileName = Path.GetFileName(resume.FilePath);
