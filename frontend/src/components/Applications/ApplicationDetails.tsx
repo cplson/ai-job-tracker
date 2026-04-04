@@ -105,7 +105,7 @@ export default function ApplicationDetails() {
             </div>
             <BackButton label="Back to Applications" fallbackPath="/applications" ignoreHistory />
         </div>
-        
+
         {/* AI SECTION */}
         <div className="card shadow">
           <div className="card-body">
@@ -124,31 +124,50 @@ export default function ApplicationDetails() {
             {aiError && <div className="alert alert-danger">{aiError}</div>}
 
             {aiResult && (
-              <>
-                <h6>Match Score</h6>
-                <div className="mb-3">
-                  <span className="badge bg-success fs-6">
-                    {aiResult.score}%
-                  </span>
-                </div>
+              <div>
+                <div>
+                  <div className="mb-4">
+                  <h3 className="font-semibold">Summary</h3>
+                  <p>{aiResult.summary}</p>
+              </div>
 
-                <h6>Suggestions</h6>
-                <ul>
-                  {aiResult.suggestions.map((s: string, i: number) => (
-                    <li key={i}>{s}</li>
+              <div className="mb-4">
+                <h3 className="font-semibold">Strengths</h3>
+                <ul className="list-disc list-inside">
+                  {aiResult.strengths.map((item: string, idx: number) => (
+                    <li key={idx}>{item}</li>
                   ))}
                 </ul>
+              </div>
 
-                <h6>Missing Keywords</h6>
-                <ul>
-                  {aiResult.missingKeywords.map((k: string, i: number) => (
-                    <li key={i}>{k}</li>
+              <div className="mb-4">
+                <h3 className="font-semibold">Weaknesses</h3>
+                <ul className="list-disc list-inside">
+                  {aiResult.weaknesses.map((item: string, idx: number) => (
+                    <li key={idx}>{item}</li>
                   ))}
                 </ul>
-              </>
-            )}
+              </div>
+
+              <div className="mb-4">
+                <h3 className="font-semibold">Suggestions</h3>
+                <ul className="list-disc list-inside">
+                  {aiResult.suggestions.map((item: string, idx: number) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mt-4">
+                <h3 className="font-semibold">Match Score</h3>
+                <p>{aiResult.matchScore}%</p>
+              </div>
           </div>
         </div>
-    </div>
+            )}
+
+          </div>
+      </div>
+      </div>
   );
 }

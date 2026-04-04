@@ -1,5 +1,7 @@
 using JobTracker.Infrastructure;
+using JobTracker.Infrastructure.Persistance;
 using JobTracker.API;
+using JobTracker.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -67,7 +69,8 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-
+builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
+builder.Services.AddScoped<IAiAnalysisService, AiAnalysisService>();
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
