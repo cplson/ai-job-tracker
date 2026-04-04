@@ -1,0 +1,8 @@
+public class AiAnalysisResultDto
+{
+    public string Summary { get; set; } = "";
+    public List<string> Strengths { get; set; } = new();
+    public List<string> Weaknesses { get; set; } = new();
+    public List<string> Suggestions { get; set; } = new();
+    public int MatchScore { get; set; } // 0–100
+}
