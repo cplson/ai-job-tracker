@@ -12,6 +12,9 @@ export default function ApplicationDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [resume, setResume] = useState<ResumeDto | null>(null);
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   // TO DO - LOW PRIORITY: update backend get application to return the 
   //                resume with it, eliminating the need for an extra api request
@@ -41,6 +44,21 @@ export default function ApplicationDetails() {
   if (loading) return <p>Loading...</p>;
   if (error) return <div className="alert alert-danger">{error}</div>;
   if (!application) return <p>Application not found</p>;
+
+  const handleAnalyze = async () => {
+    setAiLoading(true);
+    setAiError('');
+
+    try {
+      const res = await api.post(`/ai/analyze/${application?.id}`);
+      setAiResult(res.data);
+    } catch (err) {
+      console.error(err);
+      setAiError("Failed to analyze application");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   return (
     <div className="row">
@@ -87,17 +105,49 @@ export default function ApplicationDetails() {
             </div>
             <BackButton label="Back to Applications" fallbackPath="/applications" ignoreHistory />
         </div>
+        
+        {/* AI SECTION */}
+        <div className="card shadow">
+          <div className="card-body">
+            <h5>AI Insights</h5>
 
-        {/* 🔥 Future AI section */}
-        <div className="col-lg-4">
-            <div className="card shadow">
-            <div className="card-body">
-                <h5>AI Insights (Coming Soon)</h5>
-                <p className="text-muted">
-                Resume match score, keyword analysis, and suggestions will appear here.
-                </p>
-            </div>
-            </div>
+            {!aiResult && (
+              <button
+                className="btn btn-primary mb-3"
+                onClick={handleAnalyze}
+                disabled={aiLoading}
+              >
+                {aiLoading ? "Analyzing..." : "Analyze Application"}
+              </button>
+            )}
+
+            {aiError && <div className="alert alert-danger">{aiError}</div>}
+
+            {aiResult && (
+              <>
+                <h6>Match Score</h6>
+                <div className="mb-3">
+                  <span className="badge bg-success fs-6">
+                    {aiResult.score}%
+                  </span>
+                </div>
+
+                <h6>Suggestions</h6>
+                <ul>
+                  {aiResult.suggestions.map((s: string, i: number) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+
+                <h6>Missing Keywords</h6>
+                <ul>
+                  {aiResult.missingKeywords.map((k: string, i: number) => (
+                    <li key={i}>{k}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
         </div>
     </div>
   );

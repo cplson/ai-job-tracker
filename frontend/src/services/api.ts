@@ -19,5 +19,8 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config
 })
 
+export const analyzeApplication = (id: string) => {
+  return api.post(`/ai/analyze/${id}`);
+};
 
 export default api;
