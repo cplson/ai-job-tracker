@@ -9,6 +9,9 @@ using System.Security.Claims;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
+using DotNetEnv;
+
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +74,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
 builder.Services.AddScoped<IAiAnalysisService, AiAnalysisService>();
+builder.Services.AddHttpClient<IOpenAiClient, OpenAiClient>();
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
