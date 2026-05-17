@@ -51,6 +51,7 @@ export default function ApplicationDetails() {
 
     try {
       const res = await api.post(`/ai/analyze/${application?.id}`);
+      console.log(res.data);
       setAiResult(res.data);
     } catch (err) {
       console.error(err);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { UserLoginDto, LoginResponseDto } from '../../types';
 
@@ -51,10 +51,15 @@ export default function Login() {
             />
           </div>
 
-          <button className="btn btn-primary w-100" type="submit">
+          <button className="btn btn-primary w-100 mb-3" type="submit">
             Login
           </button>
         </form>
+
+        <p className="text-center mb-0">
+          Don&apos;t have an account?{' '}
+          <Link to="/register">Register</Link>
+        </p>
       </div>
     </div>
   );

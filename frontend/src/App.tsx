@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
 import ApplicationList from './components/Applications/ApplicationList';
 import ResumeList from './components/Resumes/ResumeList';
 import AppLayout from './components/Layout/AppLayout';
@@ -17,8 +18,9 @@ function App() {
   return (
 <Router>
       <Routes>
-        {/* Public route */}
+        {/* Public routes */}
         <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         {/* Protected layout routes */}
         <Route

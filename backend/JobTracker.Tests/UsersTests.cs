@@ -64,7 +64,7 @@ public class UsersTests : IClassFixture<WebApplicationFactory<Program>>
 
         response.IsSuccessStatusCode.Should().BeTrue();
 
-        var result = await response.Content.ReadFromJsonAsync<UserDto>();
+        var result = await response.Content.ReadFromJsonAsync<LoginUserDto>();
         result.Should().NotBeNull();
         result!.Email.Should().Be("test@test.com");
     }
@@ -101,7 +101,7 @@ public class UsersTests : IClassFixture<WebApplicationFactory<Program>>
         // Assert
         response.IsSuccessStatusCode.Should().BeTrue();
 
-        var users = await response.Content.ReadFromJsonAsync<List<UserDto>>();
+        var users = await response.Content.ReadFromJsonAsync<List<LoginUserDto>>();
         users.Should().NotBeNull();
         users!.Count.Should().BeGreaterThan(0);
     }
@@ -110,7 +110,7 @@ public class UsersTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task UpdateUser_PartialUpdate_EmailOnly()
     {
         // Arrange
-        var users = await _client.GetFromJsonAsync<List<UserDto>>("/api/users");
+        var users = await _client.GetFromJsonAsync<List<ReturnUserDto>>("/api/users");
         var user = users!.First();
 
         var updateRequest = new
@@ -123,14 +123,14 @@ public class UsersTests : IClassFixture<WebApplicationFactory<Program>>
 
         // Assert
         response.IsSuccessStatusCode.Should().BeTrue();
-        var updatedUser = await response.Content.ReadFromJsonAsync<UserDto>();
+        var updatedUser = await response.Content.ReadFromJsonAsync<ReturnUserDto>();
         updatedUser!.Email.Should().Be("updated-email.test.com");
     }
 
     [Fact]
     public async Task UpdateUser_PartialUpdate_PasswordOnly()
     {
-        var users = await _client.GetFromJsonAsync<List<UserDto>>("/api/users");
+        var users = await _client.GetFromJsonAsync<List<ReturnUserDto>>("/api/users");
         var user = users!.First();
 
         var updateRequest = new
@@ -143,7 +143,7 @@ public class UsersTests : IClassFixture<WebApplicationFactory<Program>>
 
         // Assert
         response.IsSuccessStatusCode.Should().BeTrue();
-        var updatedUser = await response.Content.ReadFromJsonAsync<UserDto>();
+        var updatedUser = await response.Content.ReadFromJsonAsync<ReturnUserDto>();
         updatedUser!.Email.Should().Be(user.Email);
 
         // var loginRequest = new
@@ -160,7 +160,7 @@ public class UsersTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task DeleteUser_ShouldRemoveUser()
     {
         // Arrange: get an existing user
-        var users = await _client.GetFromJsonAsync<List<UserDto>>("/api/users");
+        var users = await _client.GetFromJsonAsync<List<ReturnUserDto>>("/api/users");
         var user = users!.First();
 
         // Act
@@ -173,7 +173,7 @@ public class UsersTests : IClassFixture<WebApplicationFactory<Program>>
         var content = await response.Content.ReadAsStringAsync();
         Console.WriteLine($"DELETE response: {response.StatusCode}, content: {content}");
         // Verify user no longer exists
-        var usersAfter = await _client.GetFromJsonAsync<List<UserDto>>("/api/users");
+        var usersAfter = await _client.GetFromJsonAsync<List<ReturnUserDto>>("/api/users");
         usersAfter!.Any(u => u.Id == user.Id).Should().BeFalse();
     }
 }
