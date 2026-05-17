@@ -23,9 +23,14 @@ services:
     env_file:
       - .env
     environment:
-      DOTNET_ENVIRONMENT: Development
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT:-Development}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       Jwt__Key: ${Jwt__Key}
+      Jwt__Issuer: ${Jwt__Issuer:-JobTrackerAPI}
+      Jwt__Audience: ${Jwt__Audience:-JobTrackerClient}
+      Cors__AllowedOrigins: ${Cors__AllowedOrigins:-http://localhost:5173}
+      OPEN_AI_KEY: ${OPEN_AI_KEY:-}
     depends_on:
       - postgres
     ports:

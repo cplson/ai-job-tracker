@@ -1,0 +1,22 @@
+# Example systemd unit for a Jenkins inbound agent (JNLP).
+# Prefer SSH launch from the controller when possible (see setup-jenkins-agent.sh).
+#
+# Install:
+#   sudo cp deploy/systemd/jenkins-agent.service.example /etc/systemd/system/jenkins-agent.service
+#   sudo systemctl edit jenkins-agent  # set JENKINS_URL, SECRET, AGENT_NAME
+#   sudo systemctl enable --now jenkins-agent
+
+[Unit]
+Description=Jenkins Agent
+After=network.target docker.service
+
+[Service]
+Type=simple
+User=jenkins
+WorkingDirectory=/home/jenkins
+ExecStart=/home/jenkins/agent/agent.jar -url ${JENKINS_URL} -secret ${JENKINS_SECRET} -name ${JENKINS_AGENT_NAME}
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

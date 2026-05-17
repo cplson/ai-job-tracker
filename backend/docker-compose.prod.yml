@@ -1,0 +1,14 @@
+# Production overrides — use with:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  api:
+    image: jobtracker-api:latest
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Production
+    ports:
+      - "127.0.0.1:${API_PORT:-5001}:5000"

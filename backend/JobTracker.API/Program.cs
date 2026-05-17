@@ -22,15 +22,19 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
+var corsOrigins = builder.Configuration["Cors:AllowedOrigins"] ?? "http://localhost:5173";
+var allowedOrigins = corsOrigins
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173") // Vite default
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
-                  .AllowCredentials(); // optional (needed for cookies, not JWT)
+                  .AllowCredentials();
         });
 });
 
