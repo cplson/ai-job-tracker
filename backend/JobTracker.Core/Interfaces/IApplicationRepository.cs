@@ -4,5 +4,6 @@ namespace JobTracker.Core.Interfaces;
 
 public interface IApplicationRepository
 {
-    Task<Application?> GetByIdAsync(Guid id);
+    Task<Application?> GetByIdForUserAsync(Guid applicationId, Guid userId);
+    Task UpdateResumeExtractedTextAsync(Guid resumeId, string extractedText);
 }

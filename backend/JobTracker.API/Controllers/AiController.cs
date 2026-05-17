@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using JobTracker.Core.Enums;
 using JobTracker.Core.Interfaces;
-using JobTracker.API.Controllers;
+using JobTracker.API;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -25,7 +25,19 @@ public class AiController : ControllerBase
     [HttpPost("analyze/{applicationId:guid}")]
     public async Task<IActionResult> Analyze(Guid applicationId)
     {
-        var result = await _aiService.AnalyzeApplicationAsync(applicationId);
-        return Ok(result);
+        try
+        {
+            var userId = JwtHelper.GetUserId(User);
+            var result = await _aiService.AnalyzeApplicationAsync(applicationId, userId);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(502, ex.Message);
+        }
     }
 }

@@ -12,10 +12,20 @@ public class ApplicationRepository : IApplicationRepository
         _context = context;
     }
 
-    public async Task<Application?> GetByIdAsync(Guid id)
+    public async Task<Application?> GetByIdForUserAsync(Guid applicationId, Guid userId)
     {
         return await _context.Applications
             .Include(a => a.Resume)
-            .FirstOrDefaultAsync(a => a.Id == id);
+            .FirstOrDefaultAsync(a => a.Id == applicationId && a.UserId == userId);
+    }
+
+    public async Task UpdateResumeExtractedTextAsync(Guid resumeId, string extractedText)
+    {
+        var resume = await _context.Resumes.FindAsync(resumeId);
+        if (resume == null)
+            return;
+
+        resume.ExtractedText = extractedText;
+        await _context.SaveChangesAsync();
     }
 }

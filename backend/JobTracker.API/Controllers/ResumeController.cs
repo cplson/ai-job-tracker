@@ -5,12 +5,11 @@
 - file size limits
 - file deletion from disk on delete
 - ensure filepath doesnt expose server path
-- text extraction
-
 */
 
 using JobTracker.Infrastructure;
 using JobTracker.Core.Entities;
+using JobTracker.Core.Interfaces;
 using JobTracker.API.DTOs.Resumes;
 using JobTracker.API.Helpers;
 using Microsoft.AspNetCore.Mvc;
@@ -26,12 +25,30 @@ namespace JobTracker.API.Controllers;
 public class ResumesController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IResumeTextExtractor _resumeTextExtractor;
     private readonly ILogger<ResumesController> _logger;
 
-    public ResumesController(AppDbContext context, ILogger<ResumesController> logger)
+    public ResumesController(
+        AppDbContext context,
+        IResumeTextExtractor resumeTextExtractor,
+        ILogger<ResumesController> logger)
     {
         _context = context;
+        _resumeTextExtractor = resumeTextExtractor;
         _logger = logger;
+    }
+
+    private async Task<string> ExtractTextSafeAsync(string filePath)
+    {
+        try
+        {
+            return await _resumeTextExtractor.ExtractTextAsync(filePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to extract text from resume at {FilePath}", filePath);
+            return string.Empty;
+        }
     }
 
     private static ReturnResumeDto MapToDto(Resume resume)
@@ -54,12 +71,13 @@ public class ResumesController : ControllerBase
             return BadRequest("Valid file is required.");
 
         var filePath = await FileHelper.SaveFileAsync(dto.File);
+        var extractedText = await ExtractTextSafeAsync(filePath);
 
         var resume = new Resume
         {
             UserId = userId,
             FilePath = filePath,
-            ExtractedText = ""
+            ExtractedText = extractedText
         };
 
         _context.Resumes.Add(resume);
@@ -116,6 +134,7 @@ public class ResumesController : ControllerBase
 
         // save new file
         resume.FilePath = await FileHelper.SaveFileAsync(dto.File);
+        resume.ExtractedText = await ExtractTextSafeAsync(resume.FilePath);
 
         await _context.SaveChangesAsync();
 

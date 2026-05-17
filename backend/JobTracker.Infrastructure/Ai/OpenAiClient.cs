@@ -15,8 +15,8 @@ public class OpenAiClient : IOpenAiClient
 
     public async Task<string> GetCompletionAsync(string prompt)
     {
-        if (_apiKey == null)
-            throw new UnauthorizedAccessException("No valid OpenAi API key");
+        if (string.IsNullOrWhiteSpace(_apiKey))
+            throw new UnauthorizedAccessException("No valid OpenAI API key configured.");
 
         var requestBody = new
         {
@@ -38,8 +38,12 @@ public class OpenAiClient : IOpenAiClient
             "application/json"
         );
 
-                var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request);
         var content = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException(
+                $"OpenAI request failed ({(int)response.StatusCode}): {content}");
 
         response.EnsureSuccessStatusCode();
 
