@@ -4,6 +4,7 @@ import api from "../../services/api";
 import SubmitButton from "../Common/SubmitButton";
 import CancelButton from "../Common/CancelButton";
 import { ApplicationDto, ResumeDto } from "../../types";
+import { getApiErrorMessage } from "../../utils/apiErrors";
 
 export default function EditApplication() {
   const { id } = useParams();
@@ -13,7 +14,6 @@ export default function EditApplication() {
     jobTitle: "",
     jobDescription: "",
     status: "Draft",
-    resumeId: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -60,12 +60,18 @@ export default function EditApplication() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    if (!form.company.trim() || !form.jobTitle.trim()) {
+      setError("Company and job title are required.");
+      return;
+    }
+
     try {
-      await api.put(`/applications/${id}`, form);
-      navigate("/applications", {state: { success: "updated" }})
+      const { id: _id, ...payload } = form;
+      await api.put(`/applications/${id}`, payload);
+      navigate("/applications", { state: { success: "updated" } });
     } catch (err) {
       console.error(err);
-      setError("Failed to update application");
+      setError(getApiErrorMessage(err, "Failed to update application"));
     } finally {
       setLoading(false);
     }
@@ -110,7 +116,12 @@ export default function EditApplication() {
           <select
             className="form-select"
             value={form.resumeId || ""}
-            onChange={(e) => setForm({ ...form, resumeId: e.target.value })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                resumeId: e.target.value || undefined,
+              })
+            }
           >
             <option value="">-- None --</option>
             {resumes.map((r) => (

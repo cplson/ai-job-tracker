@@ -45,7 +45,7 @@ export interface CreateApplicationForm {
   jobTitle: string;
   jobDescription: string;
   status: string;
-  resumeId: string;
+  resumeId?: string;
 }
 
 // export interface UpdateApplicationForm {

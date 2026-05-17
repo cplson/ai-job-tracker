@@ -4,6 +4,7 @@ import api from "../../services/api";
 import SubmitButton from "../Common/SubmitButton";
 import CancelButton from "../Common/CancelButton";
 import { ResumeDto, CreateApplicationForm } from "../../types";
+import { getApiErrorMessage } from "../../utils/apiErrors";
 
 export default function CreateApplication() {
 
@@ -12,7 +13,6 @@ export default function CreateApplication() {
     jobTitle: "",
     jobDescription: "",
     status: "Draft",
-    resumeId: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,13 +33,19 @@ export default function CreateApplication() {
 
   const handleSubmit = async () => {
     setError("");
+
+    if (!form.company.trim() || !form.jobTitle.trim()) {
+      setError("Company and job title are required.");
+      return;
+    }
+
     setLoading(true);
     try {
       await api.post("/applications", form);
-      navigate("/applications", {state: {success: "created"}})
+      navigate("/applications", { state: { success: "created" } });
     } catch (err) {
       console.error(err);
-      setError("Failed to create application");
+      setError(getApiErrorMessage(err, "Failed to create application"));
     } finally {
       setLoading(false);
     }
@@ -88,7 +94,12 @@ export default function CreateApplication() {
           <select
             className="form-select"
             value={form.resumeId || ""}
-            onChange={(e) => setForm({ ...form, resumeId: e.target.value })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                resumeId: e.target.value || undefined,
+              })
+            }
           >
             <option value="">-- None --</option>
             {resumes.map((r) => (
