@@ -1,0 +1,5 @@
+# Local development — exposes Postgres on localhost for pgAdmin, psql, etc.
+services:
+  postgres:
+    ports:
+      - "5432:5432"

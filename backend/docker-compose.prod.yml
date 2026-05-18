@@ -1,9 +1,7 @@
 # Production overrides — use with:
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 services:
-  postgres:
-    ports:
-      - "127.0.0.1:5432:5432"
+  # Postgres is not published to the host in production (API connects via Docker network).
 
   api:
     image: jobtracker-api:latest

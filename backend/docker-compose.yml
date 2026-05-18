@@ -9,8 +9,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5432:5432"
+    # No host port in base file — API uses Docker network hostname "postgres".
+    # For local DB tools, use: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
     volumes:
       - pgdata:/var/lib/postgresql/data
 
