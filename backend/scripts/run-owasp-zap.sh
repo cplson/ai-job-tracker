@@ -15,12 +15,15 @@ TARGET_URL="${ZAP_TARGET_URL:-http://127.0.0.1:5000}"
 REPORT_DIR="${ZAP_REPORT_DIR:-${BACKEND_DIR}/zap-reports}"
 ENV_FILE="${ENV_FILE:-${BACKEND_DIR}/.env}"
 COMPOSE_ARGS="${COMPOSE_ARGS:--f docker-compose.yml}"
-CURL_IMAGE="${CURL_IMAGE:-curlimages/curl:8.5.0}"
+WAIT_SECONDS="${WAIT_SECONDS:-180}"
+
+ZAP_CREATED_CI_ENV=false
 
 ensure_env_file() {
   if [[ -f "${ENV_FILE}" ]]; then
     return
   fi
+  ZAP_CREATED_CI_ENV=true
   echo "No ${ENV_FILE}; writing CI defaults for ZAP scan..."
   cat > "${ENV_FILE}" <<EOF
 POSTGRES_USER=jobtracker
@@ -52,41 +55,72 @@ api_container_running() {
   [[ "$(docker inspect -f '{{.State.Running}}' "${API_CONTAINER}" 2>/dev/null || echo false)" == "true" ]]
 }
 
-curl_via_api_container() {
-  docker run --rm --network "container:${API_CONTAINER}" "${CURL_IMAGE}" "$@"
+api_logs() {
+  docker logs "${API_CONTAINER}" 2>&1 || true
 }
 
-http_status_from_api() {
-  local code
-  code="$(curl_via_api_container -s -o /dev/null -w '%{http_code}' "${TARGET_URL}/" 2>/dev/null || true)"
-  # Trim whitespace; failed curl must not be treated as ready (avoid "000" + "000" from || echo).
-  echo "${code//[[:space:]]/}"
+api_logs_recent() {
+  docker logs --tail 50 "${API_CONTAINER}" 2>&1 || true
+}
+
+wait_for_postgres() {
+  echo "Waiting for Postgres..."
+  local max=$((WAIT_SECONDS / 2))
+  for i in $(seq 1 "${max}"); do
+    if compose exec -T postgres pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1; then
+      echo "Postgres is ready."
+      return 0
+    fi
+    sleep 2
+  done
+  echo "Postgres did not become ready in time." >&2
+  compose logs postgres --tail 40 || true
+  return 1
+}
+
+wait_for_api() {
+  echo "Waiting for API (Kestrel)..."
+  local max=$((WAIT_SECONDS / 2))
+  for i in $(seq 1 "${max}"); do
+    if ! api_container_running; then
+      echo "API container exited before becoming ready." >&2
+      api_logs | tail -50 >&2
+      return 1
+    fi
+    if api_logs_recent | grep -q "Now listening on:"; then
+      echo "API is listening."
+      return 0
+    fi
+    if api_logs_recent | grep -qiE "Failed to initialize database|JWT Key is not configured|Unhandled exception"; then
+      echo "API failed during startup." >&2
+      api_logs | tail -50 >&2
+      return 1
+    fi
+    if (( i % 5 == 0 )); then
+      echo "  still waiting... (${i}/${max})"
+    fi
+    sleep 2
+  done
+  echo "API did not become ready in time." >&2
+  api_logs | tail -50 >&2
+  return 1
 }
 
 echo "Starting API stack for ZAP scan..."
+# Fresh volume on CI avoids stale Postgres credentials from earlier failed pipeline runs.
+if [[ "${ZAP_FRESH_VOLUMES:-}" == "1" || "${ZAP_CREATED_CI_ENV}" == "true" ]]; then
+  compose down -v --remove-orphans 2>/dev/null || true
+fi
 compose up -d postgres api
+
+wait_for_postgres
+wait_for_api
 
 if ! api_container_running; then
   echo "API container ${API_CONTAINER} is not running." >&2
-  compose logs api postgres || true
   exit 1
 fi
 echo "Scan target: ${TARGET_URL} (network namespace: ${API_CONTAINER})"
-
-echo "Waiting for API..."
-for i in $(seq 1 60); do
-  code="$(http_status_from_api)"
-  if [[ "${code}" =~ ^[0-9]{3}$ && "${code}" != "000" ]]; then
-    echo "API responded with HTTP ${code}."
-    break
-  fi
-  if [[ "${i}" -eq 60 ]]; then
-    echo "API did not become ready in time (last status: ${code:-none})." >&2
-    compose logs api postgres || true
-    exit 1
-  fi
-  sleep 2
-done
 
 echo "Running ZAP baseline (heap: ${ZAP_JAVA_OPTS})..."
 docker run --rm \
