@@ -64,7 +64,8 @@ wait_for_postgres() {
   echo "Waiting for Postgres..."
   local max=$((WAIT_SECONDS / 2))
   for i in $(seq 1 "${max}"); do
-    if compose exec -T postgres pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1; then
+    if compose exec -T postgres pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1 \
+      && compose exec -T postgres psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -c 'SELECT 1' >/dev/null 2>&1; then
       echo "Postgres is ready."
       return 0
     fi
@@ -79,19 +80,23 @@ wait_for_api() {
   echo "Waiting for API (Kestrel)..."
   local max=$((WAIT_SECONDS / 2))
   for i in $(seq 1 "${max}"); do
-    if ! api_container_running; then
-      echo "API container exited before becoming ready." >&2
-      api_logs | tail -50 >&2
-      return 1
-    fi
     if api_logs_recent | grep -q "Now listening on:"; then
       echo "API is listening."
       return 0
     fi
-    if api_logs_recent | grep -qiE "Failed to initialize database|password authentication failed|JWT Key is not configured|Unhandled exception"; then
+    # Non-recoverable config/auth errors only (connection refused is a startup race).
+    if api_logs_recent | grep -qiE "password authentication failed|JWT Key is not configured"; then
       echo "API failed during startup." >&2
       api_logs | tail -50 >&2
       return 1
+    fi
+    if ! api_container_running; then
+      sleep 3
+      if ! api_container_running; then
+        echo "API container is not running." >&2
+        api_logs | tail -50 >&2
+        return 1
+      fi
     fi
     if (( i % 5 == 0 )); then
       echo "  still waiting... (${i}/${max})"
@@ -107,9 +112,9 @@ echo "Starting API stack for ZAP scan..."
 # Always reset volumes: Jenkins keeps .env between runs but Postgres init password is fixed at first volume create.
 echo "Resetting ephemeral ZAP stack (removes pgdata volume)..."
 compose down -v --remove-orphans 2>/dev/null || true
-compose up -d postgres api
-
+compose up -d postgres
 wait_for_postgres
+compose up -d api
 wait_for_api
 
 if ! api_container_running; then
