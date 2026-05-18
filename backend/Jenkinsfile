@@ -4,6 +4,11 @@ pipeline {
     environment {
         BACKEND_DIR = "${env.BACKEND_DIR ?: 'backend'}"
         FRONTEND_DIR = "${env.FRONTEND_DIR ?: 'frontend'}"
+
+        SNYK_CRED_ID = "s_credentials_id"
+        SNYK_SECRET = "snyk_token"
+
+        TRIVY_SEVERITY = "HIGH,CRITICAL"
     }
 
     stages {
@@ -41,6 +46,29 @@ pipeline {
                 always {
                     dir("${BACKEND_DIR}") {
                         junit allowEmptyResults: false, testResults: 'JobTracker.Tests/TestResults/*.xml'
+                    }
+                }
+            }
+        }
+
+        stage('Snyk SAST') {
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    dir("${BACKEND_DIR}") {
+                        withCredentials([string(credentialsId: "${SNYK_CRED_ID}", variable: 'SNYK_TOKEN')]) {
+                            sh '''
+                                snyk code test \
+                                  --json-file-output=snyk-sast-report.json \
+                                  --sarif-file-output=snyk-sast-report.sarif
+                            '''
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    dir("${BACKEND_DIR}") {
+                        archiveArtifacts artifacts: 'snyk-sast-report.*', allowEmptyArchive: true
                     }
                 }
             }
