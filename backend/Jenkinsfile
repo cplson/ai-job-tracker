@@ -6,9 +6,9 @@ pipeline {
         FRONTEND_DIR = "${env.FRONTEND_DIR ?: 'frontend'}"
 
         SNYK_CRED_ID = "s_credentials_id"
-        SNYK_SECRET = "snyk_token"
+        SNYK_INSTALLATION = "snyk@latest"
 
-        TRIVY_SEVERITY = "HIGH,CRITICAL"
+        // TRIVY_SEVERITY = "HIGH,CRITICAL"
     }
 
     stages {
@@ -56,11 +56,16 @@ pipeline {
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                     dir("${BACKEND_DIR}") {
                         withCredentials([string(credentialsId: "${SNYK_CRED_ID}", variable: 'SNYK_TOKEN')]) {
-                            sh '''
-                                snyk code test \
-                                  --json-file-output=snyk-sast-report.json \
-                                  --sarif-file-output=snyk-sast-report.sarif
-                            '''
+                            script {
+                                def snykHome = tool name: "${SNYK_INSTALLATION}", type: 'io.snyk.jenkins.tools.SnykInstallation'
+                                withEnv(["PATH+SNYK=${snykHome}"]) {
+                                    sh '''
+                                        snyk code test \
+                                          --json-file-output=snyk-sast-report.json \
+                                          --sarif-file-output=snyk-sast-report.sarif
+                                    '''
+                                }
+                            }
                         }
                     }
                 }
