@@ -122,6 +122,23 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// Create schema on first run (no migrations committed in this repo)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        db.Database.EnsureCreated();
+        logger.LogInformation("Database schema ready.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to initialize database.");
+        throw;
+    }
+}
+
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {

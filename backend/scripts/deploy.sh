@@ -35,9 +35,13 @@ if [[ -d "${FRONTEND_DIST}" ]]; then
   echo "==> Publishing frontend to ${WEB_ROOT}"
   if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
     rsync -a --delete "${FRONTEND_DIST}/" "${WEB_ROOT}/"
+    chown -R www-data:www-data "${WEB_ROOT}"
+    chmod -R a+rX "${WEB_ROOT}"
     nginx -t && systemctl reload nginx
   else
     sudo rsync -a --delete "${FRONTEND_DIST}/" "${WEB_ROOT}/"
+    sudo chown -R www-data:www-data "${WEB_ROOT}"
+    sudo chmod -R a+rX "${WEB_ROOT}"
     sudo nginx -t && sudo systemctl reload nginx
   fi
 else
