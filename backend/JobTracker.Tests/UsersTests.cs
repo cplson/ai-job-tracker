@@ -1,4 +1,6 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using JobTracker.API.DTOs;
 using FluentAssertions;
 
@@ -16,126 +18,124 @@ public class UsersTests : IClassFixture<JobTrackerWebApplicationFactory>
     [Fact]
     public async Task CreateUser_ShouldReturnOk_WhenValid()
     {
-        var request = new
+        var response = await _client.PostAsJsonAsync("/api/users", new
         {
             email = "test@test.com",
             password = "123456"
-        };
-
-        var response = await _client.PostAsJsonAsync("/api/users", request);
+        });
 
         response.IsSuccessStatusCode.Should().BeTrue();
 
-        var result = await response.Content.ReadFromJsonAsync<LoginUserDto>();
+        var result = await response.Content.ReadFromJsonAsync<AuthResponse>();
         result.Should().NotBeNull();
-        result!.Email.Should().Be("test@test.com");
+        result!.Token.Should().NotBeNullOrWhiteSpace();
+        result.ReturnedUser.Email.Should().Be("test@test.com");
     }
 
     [Fact]
     public async Task CreateUser_ShouldReturnBadRequest_WhenInvalid()
     {
-        var request = new
+        var response = await _client.PostAsJsonAsync("/api/users", new
         {
             email = "invalid-email",
             password = "123"
-        };
-
-        var response = await _client.PostAsJsonAsync("/api/users", request);
+        });
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
     [Fact]
-    public async Task GetUsers_ShouldReturnUsers()
+    public async Task Login_ShouldReturnToken_WhenCredentialsValid()
     {
-        // Arrange - create a user first
-        var createRequest = new
+        await _client.PostAsJsonAsync("/api/users", new
         {
-            email = "test1@test.com",
+            email = "login-user@test.com",
             password = "123456"
-        };
+        });
 
-        await _client.PostAsJsonAsync("api/users", createRequest);
-
-        // Act
-        var response = await _client.GetAsync("/api/users");
-
-        // Assert
-        response.IsSuccessStatusCode.Should().BeTrue();
-
-        var users = await response.Content.ReadFromJsonAsync<List<LoginUserDto>>();
-        users.Should().NotBeNull();
-        users!.Count.Should().BeGreaterThan(0);
-    }
-    
-    [Fact]
-    public async Task UpdateUser_PartialUpdate_EmailOnly()
-    {
-        // Arrange
-        var users = await _client.GetFromJsonAsync<List<ReturnUserDto>>("/api/users");
-        var user = users!.First();
-
-        var updateRequest = new
+        var response = await _client.PostAsJsonAsync("/api/users/login", new
         {
-            email = "updated-email.test.com"
-        };
+            email = "login-user@test.com",
+            password = "123456"
+        });
 
-        // Act 
-        var response = await _client.PutAsJsonAsync($"/api/users/{user.Id}", updateRequest);
-
-        // Assert
         response.IsSuccessStatusCode.Should().BeTrue();
-        var updatedUser = await response.Content.ReadFromJsonAsync<ReturnUserDto>();
-        updatedUser!.Email.Should().Be("updated-email.test.com");
+        var result = await response.Content.ReadFromJsonAsync<AuthResponse>();
+        result!.Token.Should().NotBeNullOrWhiteSpace();
+        result.ReturnedUser.Email.Should().Be("login-user@test.com");
     }
 
     [Fact]
-    public async Task UpdateUser_PartialUpdate_PasswordOnly()
+    public async Task Me_ShouldReturnCurrentUser_WhenAuthenticated()
     {
-        var users = await _client.GetFromJsonAsync<List<ReturnUserDto>>("/api/users");
-        var user = users!.First();
+        var auth = await RegisterAsync("me-user@test.com", "123456");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/users/me");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
 
-        var updateRequest = new
+        var response = await _client.SendAsync(request);
+
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var me = await response.Content.ReadFromJsonAsync<MeResponse>();
+        me!.Email.Should().Be("me-user@test.com");
+    }
+
+    [Fact]
+    public async Task UpdateUser_ShouldReturnOk_WhenAuthenticated()
+    {
+        var auth = await RegisterAsync("update-user@test.com", "123456");
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"/api/users/{auth.ReturnedUser.Id}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
+        request.Content = JsonContent.Create(new { password = "NewPassword123!" });
+
+        var response = await _client.SendAsync(request);
+
+        response.IsSuccessStatusCode.Should().BeTrue();
+
+        var loginResponse = await _client.PostAsJsonAsync("/api/users/login", new
         {
+            email = "update-user@test.com",
             password = "NewPassword123!"
-        };
-
-        // Act 
-        var response = await _client.PutAsJsonAsync($"/api/users/{user.Id}", updateRequest);
-
-        // Assert
-        response.IsSuccessStatusCode.Should().BeTrue();
-        var updatedUser = await response.Content.ReadFromJsonAsync<ReturnUserDto>();
-        updatedUser!.Email.Should().Be(user.Email);
-
-        // var loginRequest = new
-        // {
-        //     email = user.Email,
-        //     password = "NewPassword123!"
-        // };
-
-        // var loginResponse = await _client.PostAsJsonAsync("/api/users/login", loginRequest);
-        // loginResponse.IsSuccessStatusCode.Should().BeTrue();
+        });
+        loginResponse.IsSuccessStatusCode.Should().BeTrue();
     }
 
     [Fact]
     public async Task DeleteUser_ShouldRemoveUser()
     {
-        // Arrange: get an existing user
-        var users = await _client.GetFromJsonAsync<List<ReturnUserDto>>("/api/users");
-        var user = users!.First();
+        var auth = await RegisterAsync("delete-user@test.com", "123456");
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/users/{auth.ReturnedUser.Id}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
 
-        // Act
-        var response = await _client.DeleteAsync($"/api/users/{user.Id}");
+        var response = await _client.SendAsync(request);
 
-        // Assert
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
 
-        // log
-        var content = await response.Content.ReadAsStringAsync();
-        Console.WriteLine($"DELETE response: {response.StatusCode}, content: {content}");
-        // Verify user no longer exists
-        var usersAfter = await _client.GetFromJsonAsync<List<ReturnUserDto>>("/api/users");
-        usersAfter!.Any(u => u.Id == user.Id).Should().BeFalse();
+        var loginResponse = await _client.PostAsJsonAsync("/api/users/login", new
+        {
+            email = "delete-user@test.com",
+            password = "123456"
+        });
+        loginResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.Unauthorized);
+    }
+
+    private async Task<AuthResponse> RegisterAsync(string email, string password)
+    {
+        var response = await _client.PostAsJsonAsync("/api/users", new { email, password });
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<AuthResponse>())!;
+    }
+
+    private sealed class AuthResponse
+    {
+        public string Token { get; set; } = string.Empty;
+
+        [JsonPropertyName("returnedUser")]
+        public ReturnUserDto ReturnedUser { get; set; } = null!;
+    }
+
+    private sealed class MeResponse
+    {
+        public string? UserId { get; set; }
+        public string? Email { get; set; }
     }
 }

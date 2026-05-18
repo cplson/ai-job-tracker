@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using JobTracker.Core.Entities;
 using JobTracker.Infrastructure;
@@ -17,15 +16,11 @@ public class JobTrackerWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.ConfigureAppConfiguration((_, config) =>
-        {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Jwt:Key"] = TestJwtKey,
-                ["Jwt:Issuer"] = "JobTrackerAPI",
-                ["Jwt:Audience"] = "JobTrackerClient",
-            });
-        });
+        // UseSetting / Testing env apply before Program.cs reads Configuration (ConfigureAppConfiguration does not).
+        builder.UseEnvironment("Testing");
+        builder.UseSetting("Jwt:Key", TestJwtKey);
+        builder.UseSetting("Jwt:Issuer", "JobTrackerAPI");
+        builder.UseSetting("Jwt:Audience", "JobTrackerClient");
 
         builder.ConfigureServices(services =>
         {

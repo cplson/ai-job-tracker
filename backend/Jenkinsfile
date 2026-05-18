@@ -29,7 +29,7 @@ pipeline {
         stage('Test') {
             steps {
                 dir("${BACKEND_DIR}") {
-                    sh 'dotnet test JobTracker.Tests/JobTracker.Tests.csproj --logger "trx;LogFileName=test_results.trx"'
+                    sh 'dotnet test JobTracker.Tests/JobTracker.Tests.csproj --settings JobTracker.Tests/test.runsettings --logger "trx;LogFileName=test_results.trx"'
                 }
             }
             post {
