@@ -60,7 +60,7 @@ public class ResumeTextExtractor : IResumeTextExtractor
 
     private static string Normalize(string text) =>
         string.Join('\n', text
-            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
             .Select(line => line.Trim())
             .Where(line => line.Length > 0));
 }
