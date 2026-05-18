@@ -17,13 +17,10 @@ ENV_FILE="${ENV_FILE:-${BACKEND_DIR}/.env}"
 COMPOSE_ARGS="${COMPOSE_ARGS:--f docker-compose.yml}"
 WAIT_SECONDS="${WAIT_SECONDS:-180}"
 
-ZAP_CREATED_CI_ENV=false
-
 ensure_env_file() {
   if [[ -f "${ENV_FILE}" ]]; then
     return
   fi
-  ZAP_CREATED_CI_ENV=true
   echo "No ${ENV_FILE}; writing CI defaults for ZAP scan..."
   cat > "${ENV_FILE}" <<EOF
 POSTGRES_USER=jobtracker
@@ -91,7 +88,7 @@ wait_for_api() {
       echo "API is listening."
       return 0
     fi
-    if api_logs_recent | grep -qiE "Failed to initialize database|JWT Key is not configured|Unhandled exception"; then
+    if api_logs_recent | grep -qiE "Failed to initialize database|password authentication failed|JWT Key is not configured|Unhandled exception"; then
       echo "API failed during startup." >&2
       api_logs | tail -50 >&2
       return 1
@@ -107,10 +104,9 @@ wait_for_api() {
 }
 
 echo "Starting API stack for ZAP scan..."
-# Fresh volume on CI avoids stale Postgres credentials from earlier failed pipeline runs.
-if [[ "${ZAP_FRESH_VOLUMES:-}" == "1" || "${ZAP_CREATED_CI_ENV}" == "true" ]]; then
-  compose down -v --remove-orphans 2>/dev/null || true
-fi
+# Always reset volumes: Jenkins keeps .env between runs but Postgres init password is fixed at first volume create.
+echo "Resetting ephemeral ZAP stack (removes pgdata volume)..."
+compose down -v --remove-orphans 2>/dev/null || true
 compose up -d postgres api
 
 wait_for_postgres
