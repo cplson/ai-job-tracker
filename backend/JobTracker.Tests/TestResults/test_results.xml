@@ -1,0 +1,61 @@
+<testsuites>
+  <testsuite name="JobTracker.Tests.dll" tests="8" skipped="0" failures="0" errors="0" time="1.5054748" timestamp="2026-05-18T22:30:46" hostname="Jamess-MacBook-Pro" id="0" package="JobTracker.Tests.dll">
+    <properties />
+    <testcase classname="UnknownNamespace.UnknownType" name="ResumeTextExtractorTests.ExtractTextAsync_ShouldReturnEmpty_ForUnsupportedExtension" time="0.0066431" />
+    <testcase classname="UnknownNamespace.UnknownType" name="ResumeTextExtractorTests.ExtractTextAsync_ShouldReadPlainTextFile" time="0.0008130" />
+    <testcase classname="JobTracker.Tests.UsersTests" name="CreateUser_ShouldReturnBadRequest_WhenInvalid" time="0.6444875" />
+    <testcase classname="JobTracker.Tests.UsersTests" name="Login_ShouldReturnToken_WhenCredentialsValid" time="0.2329448" />
+    <testcase classname="JobTracker.Tests.UsersTests" name="Me_ShouldReturnCurrentUser_WhenAuthenticated" time="0.1110734" />
+    <testcase classname="JobTracker.Tests.UsersTests" name="CreateUser_ShouldReturnOk_WhenValid" time="0.0983124" />
+    <testcase classname="JobTracker.Tests.UsersTests" name="UpdateUser_ShouldReturnOk_WhenAuthenticated" time="0.3066516" />
+    <testcase classname="JobTracker.Tests.UsersTests" name="DeleteUser_ShouldRemoveUser" time="0.1045490" />
+    <system-out>
+Test Framework Informational Messages:
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.3.1+6b60a9e56a (64-bit .NET 8.0.25)
+[xUnit.net 00:00:00.03]   Discovering: JobTracker.Tests
+[xUnit.net 00:00:00.04]   Discovered:  JobTracker.Tests
+[xUnit.net 00:00:00.04]   Starting:    JobTracker.Tests
+     Warning:
+     The component "Fluent Assertions" is governed by the rules defined in the Xceed License Agreement and
+     the Xceed Fluent Assertions Community License. You may use Fluent Assertions free of charge for
+     non-commercial use only. An active subscription is required to use Fluent Assertions for commercial use.
+     Please contact Xceed Sales mailto:sales@xceed.com to acquire a subscription at a very low cost.
+     A paid commercial license supports the development and continued increasing support of
+     Fluent Assertions users under both commercial and community licenses. Help us
+     keep Fluent Assertions at the forefront of unit testing.
+     For more information, visit https://xceed.com/products/unit-testing/fluent-assertions/
+Using connection string: Host=localhost;Port=5432;Database=JobTrackerDb;Username=postgres;Password=localPgPw
+info: Microsoft.EntityFrameworkCore.Update[30100]
+      Saved 0 entities to in-memory store.
+info: Microsoft.EntityFrameworkCore.Update[30100]
+      Saved 2 entities to in-memory store.
+info: Program[0]
+      Database schema ready.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://0.0.0.0:5000
+info: Microsoft.EntityFrameworkCore.Update[30100]
+      Saved 1 entities to in-memory store.
+incoming dto: 
+token: 
+returnedUser: 
+info: Microsoft.EntityFrameworkCore.Update[30100]
+      Saved 1 entities to in-memory store.
+info: Microsoft.EntityFrameworkCore.Update[30100]
+      Saved 1 entities to in-memory store.
+info: Microsoft.EntityFrameworkCore.Update[30100]
+      Saved 1 entities to in-memory store.
+info: Microsoft.EntityFrameworkCore.Update[30100]
+      Saved 1 entities to in-memory store.
+incoming dto: 
+token: 
+returnedUser: 
+info: Microsoft.EntityFrameworkCore.Update[30100]
+      Saved 1 entities to in-memory store.
+info: Microsoft.EntityFrameworkCore.Update[30100]
+      Saved 1 entities to in-memory store.
+incoming dto: 
+[xUnit.net 00:00:01.55]   Finished:    JobTracker.Tests
+</system-out>
+    <system-err></system-err>
+  </testsuite>
+</testsuites>

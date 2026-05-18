@@ -29,12 +29,19 @@ pipeline {
         stage('Test') {
             steps {
                 dir("${BACKEND_DIR}") {
-                    sh 'dotnet test JobTracker.Tests/JobTracker.Tests.csproj --settings JobTracker.Tests/test.runsettings --logger "trx;LogFileName=test_results.trx"'
+                    sh '''
+                        dotnet test JobTracker.Tests/JobTracker.Tests.csproj \
+                          --settings JobTracker.Tests/test.runsettings \
+                          --results-directory JobTracker.Tests/TestResults \
+                          --logger "junit;LogFileName=test_results.xml"
+                    '''
                 }
             }
             post {
                 always {
-                    junit "${BACKEND_DIR}/JobTracker.Tests/**/TestResults/*.trx"
+                    dir("${BACKEND_DIR}") {
+                        junit allowEmptyResults: false, testResults: 'JobTracker.Tests/TestResults/*.xml'
+                    }
                 }
             }
         }
