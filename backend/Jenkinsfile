@@ -53,6 +53,13 @@ pipeline {
                     sh './scripts/run-owasp-zap.sh'
                 }
             }
+            post {
+                always {
+                    dir("${BACKEND_DIR}") {
+                        archiveArtifacts artifacts: 'zap-reports/zap-report.html', allowEmptyArchive: true
+                    }
+                }
+            }
         }
 
         stage('Docker Build') {
