@@ -1,54 +1,16 @@
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Json;
 using JobTracker.API.DTOs;
 using FluentAssertions;
-using JobTracker.Infrastructure;
-using JobTracker.Core.Entities;
 
-public class UsersTests : IClassFixture<WebApplicationFactory<Program>>
+namespace JobTracker.Tests;
+
+public class UsersTests : IClassFixture<JobTrackerWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
-    public UsersTests(WebApplicationFactory<Program> factory)
+    public UsersTests(JobTrackerWebApplicationFactory factory)
     {
-        // Override the factory to use an in-memory database
-        var webAppFactory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                // Remove the existing DbContext registration
-                var descriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-                if (descriptor != null)
-                    services.Remove(descriptor);
-
-                // Register in-memory DbContext for testing
-                services.AddDbContext<AppDbContext>(options =>
-                {
-                    options.UseInMemoryDatabase("TestDb");
-                });
-
-                // Ensure database is created
-                var sp = services.BuildServiceProvider();
-                using var scope = sp.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                db.Database.EnsureCreated();
-
-                // Seed data
-                if (!db.Users.Any())
-                {
-                    db.Users.AddRange(
-                        new User { Email = "seed1@test.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password1!") },
-                        new User { Email = "seed2@test.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password2!") }
-                    );
-                    db.SaveChanges();
-                }
-            });
-        });
-
-        _client = webAppFactory.CreateClient();
+        _client = factory.CreateClient();
     }
 
     [Fact]
