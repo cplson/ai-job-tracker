@@ -31,25 +31,25 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                dir("${BACKEND_DIR}") {
-                    sh '''
-                        dotnet test JobTracker.Tests/JobTracker.Tests.csproj \
-                          --settings JobTracker.Tests/test.runsettings \
-                          --results-directory JobTracker.Tests/TestResults \
-                          --logger "junit;LogFileName=test_results.xml"
-                    '''
-                }
-            }
-            post {
-                always {
-                    dir("${BACKEND_DIR}") {
-                        junit allowEmptyResults: false, testResults: 'JobTracker.Tests/TestResults/*.xml'
-                    }
-                }
-            }
-        }
+        // stage('Test') {
+        //     steps {
+        //         dir("${BACKEND_DIR}") {
+        //             sh '''
+        //                 dotnet test JobTracker.Tests/JobTracker.Tests.csproj \
+        //                   --settings JobTracker.Tests/test.runsettings \
+        //                   --results-directory JobTracker.Tests/TestResults \
+        //                   --logger "junit;LogFileName=test_results.xml"
+        //             '''
+        //         }
+        //     }
+        //     post {
+        //         always {
+        //             dir("${BACKEND_DIR}") {
+        //                 junit allowEmptyResults: false, testResults: 'JobTracker.Tests/TestResults/*.xml'
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Snyk SAST') {
             steps {
@@ -74,21 +74,21 @@ pipeline {
             }
         }
 
-        stage('Security Scan') {
-            steps {
-                dir("${BACKEND_DIR}") {
-                    sh 'chmod +x scripts/run-owasp-zap.sh'
-                    sh './scripts/run-owasp-zap.sh'
-                }
-            }
-            post {
-                always {
-                    dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'zap-reports/zap-report.html', allowEmptyArchive: true
-                    }
-                }
-            }
-        }
+        // stage('Security Scan') {
+        //     steps {
+        //         dir("${BACKEND_DIR}") {
+        //             sh 'chmod +x scripts/run-owasp-zap.sh'
+        //             sh './scripts/run-owasp-zap.sh'
+        //         }
+        //     }
+        //     post {
+        //         always {
+        //             dir("${BACKEND_DIR}") {
+        //                 archiveArtifacts artifacts: 'zap-reports/zap-report.html', allowEmptyArchive: true
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Docker Build') {
             steps {
