@@ -29,11 +29,18 @@ if ! id "$AGENT_USER" &>/dev/null; then
   useradd -m -s /bin/bash -G docker "$AGENT_USER"
 fi
 
-install -d -m 0700 "${AGENT_HOME}/.ssh"
-if [[ ! -f "${AGENT_HOME}/.ssh/id_rsa" ]]; then
-  sudo -u "$AGENT_USER" ssh-keygen -t ed25519 -N "" -f "${AGENT_HOME}/.ssh/id_ed25519"
+# install -d as root leaves .ssh owned by root; jenkins must own it before ssh-keygen
+install -d -m 0700 -o "${AGENT_USER}" -g "${AGENT_USER}" "${AGENT_HOME}/.ssh"
+install -d -m 0755 -o "${AGENT_USER}" -g "${AGENT_USER}" "${AGENT_HOME}/agent"
+
+if [[ ! -f "${AGENT_HOME}/.ssh/id_ed25519" ]]; then
+  sudo -u "${AGENT_USER}" ssh-keygen -t ed25519 -N "" -f "${AGENT_HOME}/.ssh/id_ed25519"
 fi
-chown -R "${AGENT_USER}:${AGENT_USER}" "${AGENT_HOME}/.ssh"
+
+chown -R "${AGENT_USER}:${AGENT_USER}" "${AGENT_HOME}/.ssh" "${AGENT_HOME}/agent"
+chmod 700 "${AGENT_HOME}/.ssh"
+[[ -f "${AGENT_HOME}/.ssh/id_ed25519" ]] && chmod 600 "${AGENT_HOME}/.ssh/id_ed25519"
+[[ -f "${AGENT_HOME}/.ssh/id_ed25519.pub" ]] && chmod 644 "${AGENT_HOME}/.ssh/id_ed25519.pub"
 
 echo "Jenkins agent user: ${AGENT_USER}"
 echo "Add this public key to Jenkins SSH credentials (or authorized_keys for inbound SSH from controller):"
