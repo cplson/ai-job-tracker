@@ -20,6 +20,9 @@ RUN groupadd --gid 10001 appuser \
 
 COPY --from=build --chown=appuser:appuser /app/out ./
 
+# Writable resume storage (FileHelper creates files under /app/uploads)
+RUN mkdir -p /app/uploads && chown -R appuser:appuser /app/uploads
+
 USER appuser
 EXPOSE 5000
 ENV ASPNETCORE_URLS=http://+:5000
