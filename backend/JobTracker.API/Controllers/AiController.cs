@@ -22,6 +22,18 @@ public class AiController : ControllerBase
         _aiService = aiService;
     }
 
+    [HttpGet("analyze/{applicationId:guid}")]
+    public async Task<IActionResult> GetSavedAnalysis(Guid applicationId)
+    {
+        var userId = JwtHelper.GetUserId(User);
+        var result = await _aiService.GetSavedAnalysisAsync(applicationId, userId);
+
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
+    }
+
     [HttpPost("analyze/{applicationId:guid}")]
     public async Task<IActionResult> Analyze(Guid applicationId)
     {

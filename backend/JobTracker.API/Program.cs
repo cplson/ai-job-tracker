@@ -80,6 +80,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
+builder.Services.AddScoped<IAiAnalysisRepository, AiAnalysisRepository>();
 builder.Services.AddScoped<IAiAnalysisService, AiAnalysisService>();
 builder.Services.AddScoped<IResumeTextExtractor, ResumeTextExtractor>();
 builder.Services.AddHttpClient<IOpenAiClient, OpenAiClient>();

@@ -20,6 +20,10 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config
 })
 
+export const getSavedAnalysis = (id: string) => {
+  return api.get(`/ai/analyze/${id}`);
+};
+
 export const analyzeApplication = (id: string) => {
   return api.post(`/ai/analyze/${id}`);
 };
