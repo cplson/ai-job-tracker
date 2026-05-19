@@ -11,7 +11,7 @@ SONAR_PROJECT_KEY="${SONAR_PROJECT_KEY:-jobtracker-backend}"
 SONAR_PROJECT_NAME="${SONAR_PROJECT_NAME:-JobTracker Backend}"
 SONAR_PROJECT_VERSION="${SONAR_PROJECT_VERSION:-${BUILD_NUMBER:-local}}"
 SONAR_CONFIGURATION="${SONAR_CONFIGURATION:-Release}"
-SONAR_PROPERTIES="${SONAR_PROPERTIES:-${BACKEND_DIR}/sonar-project.properties}"
+SONAR_SETTINGS="${SONAR_SETTINGS:-${BACKEND_DIR}/SonarQube.Analysis.xml}"
 SONAR_SCANNER_VERSION="${SONAR_SCANNER_VERSION:-11.2.0}"
 RUN_TESTS="${SONAR_RUN_TESTS:-true}"
 
@@ -33,13 +33,19 @@ if ! dotnet tool list -g | grep -q '^dotnet-sonarscanner'; then
 fi
 
 echo "Starting SonarQube analysis for ${SONAR_PROJECT_KEY}..."
+if [[ ! -f "${SONAR_SETTINGS}" ]]; then
+  echo "Missing SonarQube settings file: ${SONAR_SETTINGS}" >&2
+  exit 1
+fi
+
 dotnet sonarscanner begin \
   /k:"${SONAR_PROJECT_KEY}" \
   /n:"${SONAR_PROJECT_NAME}" \
   /v:"${SONAR_PROJECT_VERSION}" \
   /d:sonar.host.url="${SONAR_HOST_URL}" \
   /d:sonar.token="${SONAR_TOKEN}" \
-  /s:"${SONAR_PROPERTIES}"
+  /d:sonar.sourceEncoding=UTF-8 \
+  /s:"${SONAR_SETTINGS}"
 
 dotnet restore JobTracker.sln
 dotnet build JobTracker.sln --configuration "${SONAR_CONFIGURATION}" --no-restore
@@ -57,5 +63,14 @@ else
 fi
 
 dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
+
+# Jenkins SonarQube plugin looks for report-task.txt at the job workspace root.
+TASK_REPORT="${BACKEND_DIR}/.sonarqube/out/.sonar/report-task.txt"
+if [[ -f "${TASK_REPORT}" && -n "${WORKSPACE:-}" ]]; then
+  dest="${WORKSPACE}/.sonarqube/out/.sonar"
+  mkdir -p "${dest}"
+  cp "${TASK_REPORT}" "${dest}/report-task.txt"
+  echo "Published report-task.txt to Jenkins workspace (${dest})."
+fi
 
 echo "SonarQube analysis finished. View results at ${SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}"
