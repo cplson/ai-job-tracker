@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # OWASP ZAP baseline scan against the API (bounded JVM for 4–8 GB hosts).
+# Uses an isolated Compose project (jobtracker-zap) so "down -v" never touches production DB.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -8,14 +9,20 @@ cd "${BACKEND_DIR}"
 
 ZAP_IMAGE="${ZAP_IMAGE:-ghcr.io/zaproxy/zaproxy:stable}"
 ZAP_JAVA_OPTS="${ZAP_JAVA_OPTS:--Xmx1024m}"
-API_PORT="${API_PORT:-5001}"
-API_CONTAINER="${API_CONTAINER:-jobtracker_api}"
-# Share the API container network namespace (Compose DNS aliases are not visible to docker run).
+ZAP_PROJECT="${ZAP_COMPOSE_PROJECT:-jobtracker-zap}"
+API_CONTAINER="${API_CONTAINER:-jobtracker_zap_api}"
 TARGET_URL="${ZAP_TARGET_URL:-http://127.0.0.1:5000}"
 REPORT_DIR="${ZAP_REPORT_DIR:-${BACKEND_DIR}/zap-reports}"
 ENV_FILE="${ENV_FILE:-${BACKEND_DIR}/.env}"
-COMPOSE_ARGS="${COMPOSE_ARGS:--f docker-compose.yml}"
 WAIT_SECONDS="${WAIT_SECONDS:-180}"
+
+COMPOSE=(
+  docker compose
+  -p "${ZAP_PROJECT}"
+  --env-file "${ENV_FILE}"
+  -f docker-compose.yml
+  -f docker-compose.zap.yml
+)
 
 ensure_env_file() {
   if [[ -f "${ENV_FILE}" ]]; then
@@ -26,7 +33,7 @@ ensure_env_file() {
 POSTGRES_USER=jobtracker
 POSTGRES_PASSWORD=ci_zap_scan_password
 POSTGRES_DB=JobTrackerDb
-API_PORT=${API_PORT}
+API_PORT=5999
 Jwt__Key=IntegrationTestJwtSigningKey_MustBe32CharsOrMore!
 Jwt__Issuer=JobTrackerAPI
 Jwt__Audience=JobTrackerClient
@@ -44,10 +51,6 @@ set +a
 
 mkdir -p "${REPORT_DIR}"
 
-compose() {
-  docker compose --env-file "${ENV_FILE}" ${COMPOSE_ARGS} "$@"
-}
-
 api_container_running() {
   [[ "$(docker inspect -f '{{.State.Running}}' "${API_CONTAINER}" 2>/dev/null || echo false)" == "true" ]]
 }
@@ -61,18 +64,18 @@ api_logs_recent() {
 }
 
 wait_for_postgres() {
-  echo "Waiting for Postgres..."
+  echo "Waiting for Postgres (ZAP stack)..."
   local max=$((WAIT_SECONDS / 2))
   for i in $(seq 1 "${max}"); do
-    if compose exec -T postgres pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1 \
-      && compose exec -T postgres psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -c 'SELECT 1' >/dev/null 2>&1; then
+    if "${COMPOSE[@]}" exec -T postgres pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1 \
+      && "${COMPOSE[@]}" exec -T postgres psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -c 'SELECT 1' >/dev/null 2>&1; then
       echo "Postgres is ready."
       return 0
     fi
     sleep 2
   done
   echo "Postgres did not become ready in time." >&2
-  compose logs postgres --tail 40 || true
+  "${COMPOSE[@]}" logs postgres --tail 40 || true
   return 1
 }
 
@@ -84,7 +87,6 @@ wait_for_api() {
       echo "API is listening."
       return 0
     fi
-    # Non-recoverable config/auth errors only (connection refused is a startup race).
     if api_logs_recent | grep -qiE "password authentication failed|JWT Key is not configured"; then
       echo "API failed during startup." >&2
       api_logs | tail -50 >&2
@@ -108,13 +110,17 @@ wait_for_api() {
   return 1
 }
 
-echo "Starting API stack for ZAP scan..."
-# Always reset volumes: Jenkins keeps .env between runs but Postgres init password is fixed at first volume create.
-echo "Resetting ephemeral ZAP stack (removes pgdata volume)..."
-compose down -v --remove-orphans 2>/dev/null || true
-compose up -d postgres
+if docker inspect jobtracker_postgres >/dev/null 2>&1; then
+  prod_volume="$(docker inspect jobtracker_postgres --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}')"
+  echo "Production Postgres is running (volume: ${prod_volume:-unknown}). ZAP will use isolated project ${ZAP_PROJECT} only."
+fi
+
+echo "Starting isolated ZAP stack (project: ${ZAP_PROJECT})..."
+echo "Resetting ephemeral ZAP volumes only (jobtracker_zap_pgdata)..."
+"${COMPOSE[@]}" down -v --remove-orphans 2>/dev/null || true
+"${COMPOSE[@]}" up -d postgres
 wait_for_postgres
-compose up -d api
+"${COMPOSE[@]}" up -d api
 wait_for_api
 
 if ! api_container_running; then
@@ -132,9 +138,8 @@ docker run --rm \
   "${ZAP_IMAGE}" \
   zap-baseline.py -t "${TARGET_URL}" -r zap-report.html -I || ZAP_EXIT=$?
 
-compose stop api || true
+"${COMPOSE[@]}" down 2>/dev/null || true
 
-# -I ignores warnings; non-zero only on FAIL-NEW in strict mode
 if [[ "${ZAP_EXIT:-0}" -gt 1 ]]; then
   echo "ZAP scan reported high-severity findings. See ${REPORT_DIR}/zap-report.html" >&2
   exit 1

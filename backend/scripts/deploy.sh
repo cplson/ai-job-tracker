@@ -26,6 +26,7 @@ docker build -t jobtracker-api:latest .
 
 echo "==> Starting production stack"
 COMPOSE=(docker compose -p jobtracker --env-file "${ENV_FILE}" -f docker-compose.yml -f docker-compose.prod.yml)
+# Never use "docker compose down -v" on this project — it deletes backend_pgdata.
 # --remove-orphans only affects this compose project, not SonarQube (project: sonarqube).
 if ! "${COMPOSE[@]}" up -d --remove-orphans; then
   echo "Compose up failed; removing stale app containers and retrying (named volumes are kept)..." >&2

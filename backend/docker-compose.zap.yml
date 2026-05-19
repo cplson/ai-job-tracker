@@ -1,0 +1,16 @@
+# Ephemeral stack for OWASP ZAP only — never shares containers/volumes with production.
+# Use: docker compose -p jobtracker-zap -f docker-compose.yml -f docker-compose.zap.yml ...
+name: jobtracker-zap
+
+services:
+  postgres:
+    container_name: jobtracker_zap_postgres
+    volumes:
+      - zap_pgdata:/var/lib/postgresql/data
+
+  api:
+    container_name: jobtracker_zap_api
+
+volumes:
+  zap_pgdata:
+    name: jobtracker_zap_pgdata
