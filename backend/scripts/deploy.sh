@@ -25,12 +25,13 @@ echo "==> Building API image"
 docker build -t jobtracker-api:latest .
 
 echo "==> Starting production stack"
-# --remove-orphans only affects this compose project (backend app), not SonarQube (project: sonarqube).
-docker compose \
-  --env-file "${ENV_FILE}" \
-  -f docker-compose.yml \
-  -f docker-compose.prod.yml \
-  up -d --remove-orphans
+COMPOSE=(docker compose --env-file "${ENV_FILE}" -f docker-compose.yml -f docker-compose.prod.yml)
+# --remove-orphans only affects this compose project, not SonarQube (project: sonarqube).
+if ! "${COMPOSE[@]}" up -d --remove-orphans; then
+  echo "Compose up failed; removing stale app containers and retrying (named volumes are kept)..." >&2
+  docker rm -f jobtracker_postgres jobtracker_api 2>/dev/null || true
+  "${COMPOSE[@]}" up -d --remove-orphans
+fi
 
 if [[ -d "${FRONTEND_DIST}" ]]; then
   echo "==> Publishing frontend to ${WEB_ROOT}"
