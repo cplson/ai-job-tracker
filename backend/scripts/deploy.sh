@@ -49,4 +49,13 @@ else
   echo "No frontend dist at ${FRONTEND_DIST}; skipping static publish." >&2
 fi
 
+if [[ -x "${SCRIPT_DIR}/ensure-sonar-server.sh" ]]; then
+  if ! curl -sf http://127.0.0.1:9000/api/system/status 2>/dev/null | grep -q '"status":"UP"'; then
+    echo "==> SonarQube is down after deploy; restarting (separate compose project: sonarqube)"
+    "${SCRIPT_DIR}/ensure-sonar-server.sh"
+  else
+    echo "==> SonarQube still up after deploy"
+  fi
+fi
+
 echo "Deploy complete."

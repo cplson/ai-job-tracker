@@ -26,6 +26,12 @@ if [[ -z "${SONAR_HOST_URL:-}" ]]; then
 fi
 
 SONAR_HOST_URL="${SONAR_HOST_URL%/}"
+# On the Jenkins host, start SonarQube if Docker is available and it is down.
+if [[ "${SONAR_ENSURE_RUNNING:-true}" == "true" ]] && command -v docker >/dev/null \
+  && [[ -f "${BACKEND_DIR}/docker-compose.sonar.yml" ]]; then
+  "${SCRIPT_DIR}/ensure-sonar-server.sh" || true
+fi
+
 status_url="${SONAR_HOST_URL}/api/system/status"
 if ! curl -sf "${status_url}" | grep -q '"status":"UP"'; then
   echo "Cannot reach SonarQube at ${SONAR_HOST_URL} (expected GET ${status_url} -> status UP)." >&2
