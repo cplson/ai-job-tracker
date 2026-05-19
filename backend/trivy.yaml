@@ -1,0 +1,11 @@
+# Default Trivy settings for JobTracker backend CI scans.
+# See: https://aquasecurity.github.io/trivy/latest/docs/references/configuration/config-file/
+severity:
+  - HIGH
+  - CRITICAL
+scan:
+  skip-dirs:
+    - JobTracker.Tests
+    - TestResults
+    - bin
+    - obj

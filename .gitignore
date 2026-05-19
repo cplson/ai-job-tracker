@@ -26,6 +26,10 @@ dist/
 # Docker
 docker-data/
 
+# Security scan reports (CI artifacts)
+**/trivy-reports/
+**/zap-reports/
+
 # Build output
 build/
 

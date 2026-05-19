@@ -14,7 +14,13 @@ RUN dotnet publish JobTracker.API/JobTracker.API.csproj -c Release -o /app/out
 # Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=build /app/out ./
 
+RUN groupadd --gid 10001 appuser \
+    && useradd --uid 10001 --gid appuser --shell /bin/bash --create-home appuser
+
+COPY --from=build --chown=appuser:appuser /app/out ./
+
+USER appuser
 EXPOSE 5000
+ENV ASPNETCORE_URLS=http://+:5000
 ENTRYPOINT ["dotnet", "JobTracker.API.dll"]
