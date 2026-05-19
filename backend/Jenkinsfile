@@ -58,13 +58,11 @@ pipeline {
                         withCredentials([string(credentialsId: "${SNYK_CRED_ID}", variable: 'SNYK_TOKEN')]) {
                             script {
                                 def snykHome = tool name: "${SNYK_INSTALLATION}", type: 'io.snyk.jenkins.tools.SnykInstallation'
-                                withEnv(["PATH+SNYK=${snykHome}"]) {
-                                    sh '''
-                                        snyk code test \
-                                          --json-file-output=snyk-sast-report.json \
-                                          --sarif-file-output=snyk-sast-report.sarif
-                                    '''
-                                }
+                                sh """
+                                    ${snykHome}/snyk-linux code test \\
+                                      --json-file-output=snyk-sast-report.json \\
+                                      --sarif-file-output=snyk-sast-report.sarif
+                                """
                             }
                         }
                     }
