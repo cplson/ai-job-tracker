@@ -143,46 +143,55 @@ export default function ApplicationDetails() {
             {aiError && <div className="alert alert-danger">{aiError}</div>}
 
             {aiResult && (
-              <div>
-                <div>
-                  <div className="mb-4">
-                  <h3 className="font-semibold">Summary</h3>
-                  <p>{aiResult.summary}</p>
-              </div>
+              <>
+                <section className="mb-4">
+                  <h6 className="fw-semibold">Summary</h6>
+                  <p className="mb-0">{aiResult.summary}</p>
+                </section>
 
-              <div className="mb-4">
-                <h3 className="font-semibold">Strengths</h3>
-                <ul className="list-disc list-inside">
-                  {aiResult.strengths.map((item: string, idx: number) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
-              </div>
+                <section className="mb-4">
+                  <h6 className="fw-semibold">Strengths</h6>
+                  <ul className="mb-0 ps-3">
+                    {aiResult.strengths.map((item: string, idx: number) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
 
-              <div className="mb-4">
-                <h3 className="font-semibold">Weaknesses</h3>
-                <ul className="list-disc list-inside">
-                  {aiResult.weaknesses.map((item: string, idx: number) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
-              </div>
+                <section className="mb-4">
+                  <h6 className="fw-semibold">Weaknesses</h6>
+                  <ul className="mb-0 ps-3">
+                    {aiResult.weaknesses.map((item: string, idx: number) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
 
-              <div className="mb-4">
-                <h3 className="font-semibold">Suggestions</h3>
-                <ul className="list-disc list-inside">
-                  {aiResult.suggestions.map((item: string, idx: number) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
-              </div>
+                <section className="mb-4">
+                  <h6 className="fw-semibold">Suggestions</h6>
+                  <ul className="mb-0 ps-3">
+                    {aiResult.suggestions.map((item: string, idx: number) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
 
-              <div className="mt-4">
-                <h3 className="font-semibold">Match Score</h3>
-                <p>{aiResult.matchScore}%</p>
-              </div>
-          </div>
-        </div>
+                <section className="mt-4">
+                <h6 className="fw-semibold mb-2">Match Score</h6>
+                <div className="progress">
+                  <div
+                    className="progress-bar"
+                    role="progressbar"
+                    style={{ width: `${aiResult.matchScore}%` }}
+                    aria-valuenow={aiResult.matchScore}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    {aiResult.matchScore}%
+                  </div>
+                </div>
+              </section>
+              </>
             )}
 
           </div>

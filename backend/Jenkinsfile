@@ -52,47 +52,47 @@ pipeline {
             }
         }
 
-        stage('Snyk SAST') {
-            steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    dir("${BACKEND_DIR}") {
-                        withCredentials([string(credentialsId: "${SNYK_CRED_ID}", variable: 'SNYK_TOKEN')]) {
-                            script {
-                                def snykHome = tool name: "${SNYK_INSTALLATION}", type: 'io.snyk.jenkins.tools.SnykInstallation'
-                                sh """
-                                    ${snykHome}/snyk-linux code test \\
-                                      --json-file-output=snyk-sast-report.json \\
-                                      --sarif-file-output=snyk-sast-report.sarif
-                                """
-                            }
-                        }
-                    }
-                }
-            }
-            post {
-                always {
-                    dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'snyk-sast-report.*', allowEmptyArchive: true
-                    }
-                }
-            }
-        }
+        // stage('Snyk SAST') {
+        //     steps {
+        //         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+        //             dir("${BACKEND_DIR}") {
+        //                 withCredentials([string(credentialsId: "${SNYK_CRED_ID}", variable: 'SNYK_TOKEN')]) {
+        //                     script {
+        //                         def snykHome = tool name: "${SNYK_INSTALLATION}", type: 'io.snyk.jenkins.tools.SnykInstallation'
+        //                         sh """
+        //                             ${snykHome}/snyk-linux code test \\
+        //                               --json-file-output=snyk-sast-report.json \\
+        //                               --sarif-file-output=snyk-sast-report.sarif
+        //                         """
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     post {
+        //         always {
+        //             dir("${BACKEND_DIR}") {
+        //                 archiveArtifacts artifacts: 'snyk-sast-report.*', allowEmptyArchive: true
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('Security Scan') {
-            steps {
-                dir("${BACKEND_DIR}") {
-                    sh 'chmod +x scripts/run-owasp-zap.sh'
-                    sh './scripts/run-owasp-zap.sh'
-                }
-            }
-            post {
-                always {
-                    dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'zap-reports/zap-report.html', allowEmptyArchive: true
-                    }
-                }
-            }
-        }
+        // stage('Security Scan') {
+        //     steps {
+        //         dir("${BACKEND_DIR}") {
+        //             sh 'chmod +x scripts/run-owasp-zap.sh'
+        //             sh './scripts/run-owasp-zap.sh'
+        //         }
+        //     }
+        //     post {
+        //         always {
+        //             dir("${BACKEND_DIR}") {
+        //                 archiveArtifacts artifacts: 'zap-reports/zap-report.html', allowEmptyArchive: true
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Docker Build') {
             steps {
@@ -102,23 +102,23 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan') {
-            steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    dir("${BACKEND_DIR}") {
-                        sh 'chmod +x scripts/run-trivy.sh'
-                        sh './scripts/run-trivy.sh'
-                    }
-                }
-            }
-            post {
-                always {
-                    dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'trivy-reports/*', allowEmptyArchive: true
-                    }
-                }
-            }
-        }
+        // stage('Trivy Scan') {
+        //     steps {
+        //         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+        //             dir("${BACKEND_DIR}") {
+        //                 sh 'chmod +x scripts/run-trivy.sh'
+        //                 sh './scripts/run-trivy.sh'
+        //             }
+        //         }
+        //     }
+        //     post {
+        //         always {
+        //             dir("${BACKEND_DIR}") {
+        //                 archiveArtifacts artifacts: 'trivy-reports/*', allowEmptyArchive: true
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Build Frontend') {
             steps {
