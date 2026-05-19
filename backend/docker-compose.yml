@@ -36,4 +36,6 @@ services:
     # Port mapping is set in docker-compose.dev.yml or docker-compose.prod.yml
 
 volumes:
+  # Fixed name so Jenkins/compose project changes do not create a new empty DB volume.
   pgdata:
+    name: backend_pgdata

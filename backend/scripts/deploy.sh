@@ -25,12 +25,43 @@ echo "==> Building API image"
 docker build -t jobtracker-api:latest .
 
 echo "==> Starting production stack"
-COMPOSE=(docker compose --env-file "${ENV_FILE}" -f docker-compose.yml -f docker-compose.prod.yml)
+COMPOSE=(docker compose -p jobtracker --env-file "${ENV_FILE}" -f docker-compose.yml -f docker-compose.prod.yml)
 # --remove-orphans only affects this compose project, not SonarQube (project: sonarqube).
 if ! "${COMPOSE[@]}" up -d --remove-orphans; then
   echo "Compose up failed; removing stale app containers and retrying (named volumes are kept)..." >&2
   docker rm -f jobtracker_postgres jobtracker_api 2>/dev/null || true
   "${COMPOSE[@]}" up -d --remove-orphans
+fi
+
+echo "==> Waiting for Postgres"
+for _ in $(seq 1 30); do
+  if "${COMPOSE[@]}" exec -T postgres pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 2
+done
+
+echo "==> Waiting for API (schema init + listening)"
+api_ready=false
+for _ in $(seq 1 60); do
+  logs="$(docker logs jobtracker_api 2>&1 | tail -80 || true)"
+  if echo "${logs}" | grep -qi "Failed to initialize database"; then
+    echo "API failed to initialize database:" >&2
+    docker logs jobtracker_api --tail 40 >&2
+    exit 1
+  fi
+  if echo "${logs}" | grep -q "Database schema ready" \
+    && echo "${logs}" | grep -q "Now listening on"; then
+    api_ready=true
+    break
+  fi
+  sleep 2
+done
+
+if [[ "${api_ready}" != "true" ]]; then
+  echo "API did not become ready in time. Recent logs:" >&2
+  docker logs jobtracker_api --tail 40 >&2
+  exit 1
 fi
 
 if [[ -d "${FRONTEND_DIST}" ]]; then

@@ -8,7 +8,7 @@ cd "${BACKEND_DIR}"
 
 ENV_FILE="${ENV_FILE:-${BACKEND_DIR}/.env}"
 
-docker compose --env-file "${ENV_FILE}" -f docker-compose.yml -f docker-compose.prod.yml up -d postgres api
+docker compose -p jobtracker --env-file "${ENV_FILE}" -f docker-compose.yml -f docker-compose.prod.yml up -d postgres api
 
 echo "Waiting for API..."
 for i in $(seq 1 30); do
