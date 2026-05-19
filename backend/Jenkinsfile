@@ -5,7 +5,8 @@ pipeline {
         BACKEND_DIR = "${env.BACKEND_DIR ?: 'backend'}"
         FRONTEND_DIR = "${env.FRONTEND_DIR ?: 'frontend'}"
 
-        SNYK_CRED_ID = "s_credentials_id"
+        SNYK_TOKEN = "a7e515b1-5027-42e8-ab01-66bd07535b67"
+        SNYK_CRED_ID = "a7e515b1-5027-42e8-ab01-66bd07535b67"
         SNYK_INSTALLATION = "snyk@latest"
 
         // TRIVY_SEVERITY = "HIGH,CRITICAL"
