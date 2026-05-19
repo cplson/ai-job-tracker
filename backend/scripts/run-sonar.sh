@@ -15,17 +15,23 @@ SONAR_SETTINGS="${SONAR_SETTINGS:-${BACKEND_DIR}/SonarQube.Analysis.xml}"
 SONAR_SCANNER_VERSION="${SONAR_SCANNER_VERSION:-11.2.0}"
 RUN_TESTS="${SONAR_RUN_TESTS:-true}"
 
+# Jenkins withSonarQubeEnv sets SONAR_HOST_URL + SONAR_AUTH_TOKEN; support alternate names.
+SONAR_HOST_URL="${SONAR_HOST_URL:-${SONARQUBE_URL:-}}"
 SONAR_TOKEN="${SONAR_AUTH_TOKEN:-${SONAR_TOKEN:-}}"
+
 if [[ -z "${SONAR_TOKEN}" ]]; then
   echo "SONAR_AUTH_TOKEN or SONAR_TOKEN is required." >&2
   exit 1
 fi
-if [[ -z "${SONAR_HOST_URL:-}" ]]; then
-  echo "SONAR_HOST_URL is required." >&2
+if [[ -z "${SONAR_HOST_URL}" ]]; then
+  echo "SONAR_HOST_URL is required (set Jenkins SonarQube server URL to http://127.0.0.1:9000)." >&2
   exit 1
 fi
 
 SONAR_HOST_URL="${SONAR_HOST_URL%/}"
+export SONAR_HOST_URL SONAR_TOKEN
+
+echo "SonarQube target: ${SONAR_HOST_URL} (token length: ${#SONAR_TOKEN})"
 # On the Jenkins host, start SonarQube if Docker is available and it is down.
 if [[ "${SONAR_ENSURE_RUNNING:-true}" == "true" ]] && command -v docker >/dev/null \
   && [[ -f "${BACKEND_DIR}/docker-compose.sonar.yml" ]]; then
@@ -77,7 +83,9 @@ else
   echo "Skipping tests (SONAR_RUN_TESTS=false)."
 fi
 
-dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
+dotnet sonarscanner end \
+  /d:sonar.host.url="${SONAR_HOST_URL}" \
+  /d:sonar.token="${SONAR_TOKEN}"
 
 # Jenkins SonarQube plugin looks for report-task.txt at the job workspace root.
 TASK_REPORT="${BACKEND_DIR}/.sonarqube/out/.sonar/report-task.txt"

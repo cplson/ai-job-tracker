@@ -32,18 +32,10 @@ pipeline {
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                     dir("${BACKEND_DIR}") {
                         withSonarQubeEnv("${SONARQUBE_ENV}") {
-                            script {
-                                def scanOk = sh(
-                                    script: 'chmod +x scripts/run-sonar.sh && ./scripts/run-sonar.sh',
-                                    returnStatus: true
-                                )
-                                if (scanOk == 0) {
-                                    timeout(time: 5, unit: 'MINUTES') {
-                                        waitForQualityGate abortPipeline: false
-                                    }
-                                } else {
-                                    echo 'Skipping waitForQualityGate: SonarQube analysis did not complete.'
-                                }
+                            // Use a direct sh step (not inside script {}) so SONAR_HOST_URL / SONAR_AUTH_TOKEN reach the shell.
+                            sh 'chmod +x scripts/run-sonar.sh && ./scripts/run-sonar.sh'
+                            timeout(time: 5, unit: 'MINUTES') {
+                                waitForQualityGate abortPipeline: false
                             }
                         }
                     }
