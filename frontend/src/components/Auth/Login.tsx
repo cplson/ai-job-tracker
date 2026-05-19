@@ -9,17 +9,38 @@ export default function Login() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const dto: UserLoginDto = { email, password };
-    console.log("UserLoginDto: ", dto)
+    setError('');
+    const dto: UserLoginDto = {
+      email: email.trim().toLowerCase(),
+      password,
+    };
     try {
       const res = await api.post<LoginResponseDto>('/users/login', dto);
       localStorage.setItem('jwt', res.data.token);
       navigate('/applications');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      setError('Login failed');
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof err.response === 'object' &&
+        err.response !== null &&
+        'status' in err.response
+      ) {
+        const status = err.response.status;
+        if (status === 401) {
+          setError('Invalid email or password.');
+          return;
+        }
+        if (status === 400) {
+          setError('Please enter your email and password.');
+          return;
+        }
+      }
+      setError('Login failed. Check that the API is running and try again.');
     }
   };
 
@@ -38,6 +59,8 @@ export default function Login() {
               placeholder="Email"
               value={email}
               onChange={e => setEmail(e.target.value)}
+              required
+              autoComplete="email"
             />
           </div>
 
@@ -48,6 +71,8 @@ export default function Login() {
               placeholder="Password"
               value={password}
               onChange={e => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
             />
           </div>
 

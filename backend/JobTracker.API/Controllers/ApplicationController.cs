@@ -78,6 +78,14 @@ public class ApplicationsController : ControllerBase
 
         var userId = JwtHelper.GetUserId(User);
 
+        if (dto.ResumeId.HasValue)
+        {
+            var resumeOwned = await _context.Resumes
+                .AnyAsync(r => r.Id == dto.ResumeId.Value && r.UserId == userId);
+            if (!resumeOwned)
+                return BadRequest("Resume not found.");
+        }
+
         var app = new Application
         {
             Id = Guid.NewGuid(),
@@ -118,6 +126,14 @@ public class ApplicationsController : ControllerBase
 
         if (app == null)
             return NotFound();
+
+        if (dto.ResumeId.HasValue)
+        {
+            var resumeOwned = await _context.Resumes
+                .AnyAsync(r => r.Id == dto.ResumeId.Value && r.UserId == userId);
+            if (!resumeOwned)
+                return BadRequest("Resume not found.");
+        }
 
         if (dto.Company != null) app.Company = dto.Company;
         if (dto.JobTitle != null) app.JobTitle = dto.JobTitle;

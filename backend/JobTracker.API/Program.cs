@@ -1,6 +1,7 @@
 using JobTracker.Infrastructure;
 using JobTracker.Infrastructure.Persistance;
 using JobTracker.API;
+using JobTracker.API.Json;
 using JobTracker.Core.Interfaces;
 using JobTracker.Core.Services;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableGuidJsonConverter());
     });
 
 var corsOrigins = builder.Configuration["Cors:AllowedOrigins"] ?? "http://localhost:5173";

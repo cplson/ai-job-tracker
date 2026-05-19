@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 
-// const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
+// Same path in dev and prod. Vite proxies /api → localhost:5001 in dev; nginx does in prod.
 const API_URL = import.meta.env.VITE_API_URL ?? '/api';
 
 const api = axios.create({

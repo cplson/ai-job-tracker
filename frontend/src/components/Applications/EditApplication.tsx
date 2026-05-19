@@ -66,7 +66,13 @@ export default function EditApplication() {
     }
 
     try {
-      const { id: _id, ...payload } = form;
+      const payload = {
+        company: form.company.trim(),
+        jobTitle: form.jobTitle.trim(),
+        jobDescription: form.jobDescription?.trim() ?? "",
+        status: form.status,
+        ...(form.resumeId ? { resumeId: form.resumeId } : {}),
+      };
       await api.put(`/applications/${id}`, payload);
       navigate("/applications", { state: { success: "updated" } });
     } catch (err) {

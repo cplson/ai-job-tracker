@@ -41,7 +41,14 @@ export default function CreateApplication() {
 
     setLoading(true);
     try {
-      await api.post("/applications", form);
+      const payload = {
+        company: form.company.trim(),
+        jobTitle: form.jobTitle.trim(),
+        jobDescription: form.jobDescription.trim(),
+        status: form.status,
+        ...(form.resumeId ? { resumeId: form.resumeId } : {}),
+      };
+      await api.post("/applications", payload);
       navigate("/applications", { state: { success: "created" } });
     } catch (err) {
       console.error(err);
@@ -83,6 +90,7 @@ export default function CreateApplication() {
           <textarea
             className="form-control"
             value={form.jobDescription}
+            maxLength={2000}
             onChange={(e) =>
               setForm({ ...form, jobDescription: e.target.value })
             }

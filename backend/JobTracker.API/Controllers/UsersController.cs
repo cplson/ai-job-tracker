@@ -27,7 +27,9 @@ public class UsersController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
+        dto.Email = dto.Email.Trim().ToLowerInvariant();
+
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == dto.Email))
             return Conflict("Email already in use.");
 
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
@@ -126,11 +128,15 @@ public class UsersController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginUserDto dto, [FromServices] JwtHelper jwtHelper)
     {
-        Console.WriteLine("incoming dto: ", dto);
-        var user = await _context.Users
-            .SingleOrDefaultAsync(u => u.Email == dto.Email);
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        dto.Email = dto.Email.Trim().ToLowerInvariant();
+
+        var user = await _context.Users
+            .SingleOrDefaultAsync(u => u.Email.ToLower() == dto.Email);
+
+        if (user == null || !VerifyPassword(dto.Password, user.PasswordHash))
             return Unauthorized("Invalid email or password");
 
         var token = jwtHelper.GenerateToken(user);
@@ -154,6 +160,21 @@ public class UsersController : ControllerBase
         var email = User.FindFirstValue(ClaimTypes.Name);
 
         return Ok(new { userId, email });
+    }
+
+    private static bool VerifyPassword(string password, string passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash) || !passwordHash.StartsWith("$2"))
+            return false;
+
+        try
+        {
+            return BCrypt.Net.BCrypt.Verify(password, passwordHash);
+        }
+        catch (BCrypt.Net.SaltParseException)
+        {
+            return false;
+        }
     }
 }
 

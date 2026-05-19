@@ -24,7 +24,7 @@ export default function Register() {
       return;
     }
 
-    const dto: CreateUserDto = { email, password };
+    const dto: CreateUserDto = { email: email.trim().toLowerCase(), password };
 
     try {
       const res = await api.post<RegisterResponseDto>('/users', dto);
