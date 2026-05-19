@@ -60,6 +60,7 @@ useEffect(() => {
                 <tr>
                   <th>Company</th>
                   <th>Job Title</th>
+                  <th>Resume</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -72,6 +73,7 @@ useEffect(() => {
                   >
                     <td>{app.company}</td>
                     <td>{app.jobTitle}</td>
+                    <td>{app.resumeFileName ?? 'None'}</td>
                     <td>{app.status}</td>
                   </tr>
                 ))}
