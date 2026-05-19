@@ -14,6 +14,10 @@ public class Resume
     public Guid UserId { get; set; }
 
     [Required]
+    [StringLength(200)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required]
     [StringLength(512)]
     public string FilePath { get; set; } = string.Empty;
 

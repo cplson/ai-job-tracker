@@ -5,7 +5,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 
 interface ResumeDto {
   id: string;
-  fileName: string;
+  name: string;
   uploadedAt: string;
 }
 
@@ -36,7 +36,7 @@ export default function ResumeList() {
     fetchResumes();
   }, []);
 
-  const handleDownload = async (id: string, fileName: string) => {
+  const handleDownload = async (id: string, downloadName: string) => {
     try {
       const res = await api.get(`/resumes/${id}/download`, {
         responseType: "blob",
@@ -46,7 +46,7 @@ export default function ResumeList() {
       const link = document.createElement("a");
 
       link.href = url;
-      link.setAttribute("download", fileName);
+      link.setAttribute("download", downloadName);
       document.body.appendChild(link);
       link.click();
 
@@ -85,7 +85,7 @@ export default function ResumeList() {
             <table className="table table-striped">
               <thead>
                 <tr>
-                  <th>File Name</th>
+                  <th>Name</th>
                   <th>Uploaded</th>
                   <th></th>
                   {/* <th></th> */}
@@ -94,12 +94,12 @@ export default function ResumeList() {
               <tbody>
                 {resumes.map((r) => (
                   <tr key={r.id} className="align-middle">
-                    <td>📄 {r.fileName}</td>
+                    <td>📄 {r.name}</td>
                     <td>{new Date(r.uploadedAt).toLocaleString()}</td>
                     <td className="d-flex gap-2">
                       <button
                         className="btn btn-outline-primary btn-sm"
-                        onClick={() => handleDownload(r.id, r.fileName)}
+                        onClick={() => handleDownload(r.id, r.name)}
                       >
                         Download
                       </button>

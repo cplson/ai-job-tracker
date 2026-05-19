@@ -45,6 +45,24 @@ export default function ApplicationDetails() {
   if (error) return <div className="alert alert-danger">{error}</div>;
   if (!application) return <p>Application not found</p>;
 
+  const handleDownloadResume = async () => {
+    if (!resume) return;
+    try {
+      const res = await api.get(`/resumes/${resume.id}/download`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", resume.name);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleAnalyze = async () => {
     setAiLoading(true);
     setAiError('');
@@ -92,14 +110,14 @@ export default function ApplicationDetails() {
                 {resume && (
                   <div className="mb-3">
                     <h5>Resume</h5>
-                    <a 
-                      href={resume.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
+                    <p className="mb-2">📄 {resume.name}</p>
+                    <button
+                      type="button"
                       className="btn btn-outline-secondary"
+                      onClick={handleDownloadResume}
                     >
-                      Download / View Resume
-                    </a>
+                      Download Resume
+                    </button>
                   </div>
                 )}
               </div>

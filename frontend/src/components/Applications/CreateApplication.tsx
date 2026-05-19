@@ -112,7 +112,7 @@ export default function CreateApplication() {
             <option value="">-- None --</option>
             {resumes.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.fileName}
+                {r.name}
               </option>
             ))}
           </select>

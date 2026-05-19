@@ -5,12 +5,18 @@ import SubmitButton from "../Common/SubmitButton";
 import CancelButton from "../Common/CancelButton";
 
 export default function UploadResume() {
+  const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
+    if (!name.trim()) {
+      setError("Please enter a name for your resume.");
+      return;
+    }
+
     if (!file) {
       setError("Please select a file.");
       return;
@@ -21,6 +27,7 @@ export default function UploadResume() {
 
     try {
       const formData = new FormData();
+      formData.append("name", name.trim());
       formData.append("file", file);
 
       await api.post("/resumes", formData, {
@@ -54,6 +61,18 @@ export default function UploadResume() {
             }
         }}
       >
+        <div className="mb-3">
+          <label className="form-label">Resume Name</label>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="e.g. Software Engineer Resume"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={200}
+          />
+        </div>
+
         <div className="mb-3">
           <label className="form-label">Resume File</label>
           <input

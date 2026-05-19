@@ -51,12 +51,20 @@ public class ResumesController : ControllerBase
         }
     }
 
+    private static string GetDownloadFileName(Resume resume)
+    {
+        var ext = Path.GetExtension(resume.FilePath);
+        if (string.IsNullOrEmpty(ext) || resume.Name.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
+            return resume.Name;
+        return resume.Name + ext;
+    }
+
     private static ReturnResumeDto MapToDto(Resume resume)
     {
         return new ReturnResumeDto
         {
             Id = resume.Id,
-            FileName = Path.GetFileName(resume.FilePath),
+            Name = resume.Name,
             UploadedAt = resume.UploadedAt
         };
     }
@@ -70,12 +78,17 @@ public class ResumesController : ControllerBase
         if (!ModelState.IsValid || dto.File == null || dto.File.Length == 0)
             return BadRequest("Valid file is required.");
 
+        var name = dto.Name.Trim();
+        if (string.IsNullOrEmpty(name))
+            return BadRequest("Resume name is required.");
+
         var filePath = await FileHelper.SaveFileAsync(dto.File);
         var extractedText = await ExtractTextSafeAsync(filePath);
 
         var resume = new Resume
         {
             UserId = userId,
+            Name = name,
             FilePath = filePath,
             ExtractedText = extractedText
         };
@@ -176,8 +189,7 @@ public class ResumesController : ControllerBase
             
 
         var fileBytes = await System.IO.File.ReadAllBytesAsync(resume.FilePath);
-        var fileName = Path.GetFileName(resume.FilePath);
 
-        return File(fileBytes, "application/octet-stream", fileName);
+        return File(fileBytes, "application/octet-stream", GetDownloadFileName(resume));
     }
 }

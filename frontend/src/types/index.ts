@@ -24,8 +24,7 @@ export interface RegisterResponseDto {
 
 export interface ResumeDto {
   id: string;
-  fileName: string;
-  url: string;
+  name: string;
   uploadedAt: string;
 }
 
