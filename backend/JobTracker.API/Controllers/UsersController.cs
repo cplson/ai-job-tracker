@@ -146,8 +146,6 @@ public class UsersController : ControllerBase
             Id = user.Id,
             Email = user.Email
         };
-        Console.WriteLine("token: ", token);
-        Console.WriteLine("returnedUser: ", returnedUser);
         return Ok(new { token, returnedUser });
     }
 
