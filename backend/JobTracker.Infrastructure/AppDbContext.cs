@@ -24,6 +24,12 @@ namespace JobTracker.Infrastructure
                 .WithMany()
                 .HasForeignKey(a => a.ResumeId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<AIJob>()
+                .HasOne(j => j.Application)
+                .WithMany(a => a.AIJobs)
+                .HasForeignKey(j => j.ApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

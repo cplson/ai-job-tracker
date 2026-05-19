@@ -17,20 +17,28 @@ public class AiAnalysisResultDto
 public class AiAnalysisService : IAiAnalysisService
 {
     private readonly IApplicationRepository _applicationRepository;
+    private readonly IAiAnalysisRepository _aiAnalysisRepository;
     private readonly IOpenAiClient _openAiClient;
     private readonly IResumeTextExtractor _resumeTextExtractor;
     private readonly ILogger<AiAnalysisService> _logger;
 
     public AiAnalysisService(
         IApplicationRepository applicationRepository,
+        IAiAnalysisRepository aiAnalysisRepository,
         IOpenAiClient openAiClient,
         IResumeTextExtractor resumeTextExtractor,
         ILogger<AiAnalysisService> logger)
     {
         _applicationRepository = applicationRepository;
+        _aiAnalysisRepository = aiAnalysisRepository;
         _openAiClient = openAiClient;
         _resumeTextExtractor = resumeTextExtractor;
         _logger = logger;
+    }
+
+    public Task<AiAnalysisResultDto?> GetSavedAnalysisAsync(Guid applicationId, Guid userId)
+    {
+        return _aiAnalysisRepository.GetLatestAnalysisAsync(applicationId, userId);
     }
 
     public async Task<AiAnalysisResultDto> AnalyzeApplicationAsync(Guid applicationId, Guid userId)
@@ -89,6 +97,13 @@ Job Description:
 
         if (result == null)
             throw new InvalidOperationException("Failed to parse AI response.");
+
+        await _aiAnalysisRepository.SaveAnalysisAsync(applicationId, result);
+
+        _logger.LogInformation(
+            "Saved AI analysis for application {ApplicationId} (matchScore={MatchScore})",
+            applicationId,
+            result.MatchScore);
 
         return result;
     }

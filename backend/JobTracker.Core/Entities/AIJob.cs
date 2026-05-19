@@ -22,7 +22,7 @@ public class AIJob
     [StringLength(4000)]
     public string Result { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [ForeignKey("ApplicationId")]
     public Application? Application { get; set; }

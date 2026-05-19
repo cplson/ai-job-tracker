@@ -38,6 +38,14 @@ export interface ApplicationDto {
   resumeFileName?: string;
 }
 
+export interface AiAnalysisResultDto {
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  suggestions: string[];
+  matchScore: number;
+}
+
 // FORMS
 export interface CreateApplicationForm {
   company: string;

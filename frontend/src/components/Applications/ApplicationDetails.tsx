@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../services/api';
-import type { ApplicationDto, ResumeDto } from '../../types';
+import type { AiAnalysisResultDto, ApplicationDto, ResumeDto } from '../../types';
+import { analyzeApplication, getSavedAnalysis } from '../../services/api';
 import BackButton from '../Common/BackButton';
 import DeleteButton from '../Common/DeleteButton';
 import EditButton from '../Common/EditButton';
@@ -12,7 +13,7 @@ export default function ApplicationDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [resume, setResume] = useState<ResumeDto | null>(null);
-  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiResult, setAiResult] = useState<AiAnalysisResultDto | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
 
@@ -29,6 +30,13 @@ export default function ApplicationDetails() {
             `/resumes/${appRes.data.resumeId}`
           );
           setResume(res.data);
+        }
+
+        try {
+          const analysisRes = await getSavedAnalysis(id!);
+          setAiResult(analysisRes.data);
+        } catch {
+          // No saved analysis yet
         }
       } catch (err) {
         console.error(err);
@@ -68,8 +76,7 @@ export default function ApplicationDetails() {
     setAiError('');
 
     try {
-      const res = await api.post(`/ai/analyze/${application?.id}`);
-      console.log(res.data);
+      const res = await analyzeApplication(application.id);
       setAiResult(res.data);
     } catch (err) {
       console.error(err);
@@ -127,15 +134,17 @@ export default function ApplicationDetails() {
           <div className="card-body">
             <h5>AI Insights</h5>
 
-            {!aiResult && (
-              <button
-                className="btn btn-primary mb-3"
-                onClick={handleAnalyze}
-                disabled={aiLoading}
-              >
-                {aiLoading ? "Analyzing..." : "Analyze Application"}
-              </button>
-            )}
+            <button
+              className="btn btn-primary mb-3"
+              onClick={handleAnalyze}
+              disabled={aiLoading}
+            >
+              {aiLoading
+                ? "Analyzing..."
+                : aiResult
+                  ? "Re-analyze Application"
+                  : "Analyze Application"}
+            </button>
 
             {aiError && <div className="alert alert-danger">{aiError}</div>}
 
