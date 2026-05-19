@@ -1,0 +1,8 @@
+# Snyk (https://snyk.io) policy file — excludes test-only paths from Snyk Code (SAST).
+# Per-issue ignores for Code are not supported in .snyk; use file/directory excludes only.
+exclude:
+  code:
+    - JobTracker.Tests/**
+    - JobTracker.API/Controllers/TestController.cs
+    - JobTracker.API/appsettings.Testing.json
+    - scripts/run-owasp-zap.sh
