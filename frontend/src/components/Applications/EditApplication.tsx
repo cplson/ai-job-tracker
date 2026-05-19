@@ -6,6 +6,14 @@ import CancelButton from "../Common/CancelButton";
 import { ApplicationDto, ResumeDto } from "../../types";
 import { getApiErrorMessage } from "../../utils/apiErrors";
 
+const APPLICATION_STATUSES = [
+  "Draft",
+  "Applied",
+  "Interviewing",
+  "Offer",
+  "Rejected",
+] as const;
+
 export default function EditApplication() {
   const { id } = useParams();
   const [form, setForm] = useState<ApplicationDto>({
@@ -115,6 +123,21 @@ export default function EditApplication() {
               setForm({ ...form, jobDescription: e.target.value })
             }
           />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Status</label>
+          <select
+            className="form-select"
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value })}
+          >
+            {APPLICATION_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="mb-3">
