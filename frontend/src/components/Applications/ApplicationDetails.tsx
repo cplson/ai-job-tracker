@@ -80,7 +80,7 @@ export default function ApplicationDetails() {
   };
 
   return (
-    <div className="row">
+    <div className="row justify-content-center">
         <div className="col-lg-8">
             <div className="card shadow mb-4">
                 <div className="d-flex justify-content-end gap-2 m-3">
@@ -121,12 +121,9 @@ export default function ApplicationDetails() {
                   </div>
                 )}
               </div>
-            </div>
-            <BackButton label="Back to Applications" fallbackPath="/applications" ignoreHistory />
         </div>
 
-        {/* AI SECTION */}
-        <div className="card shadow">
+        <div className="card shadow mb-4">
           <div className="card-body">
             <h5>AI Insights</h5>
 
@@ -195,7 +192,14 @@ export default function ApplicationDetails() {
             )}
 
           </div>
+        </div>
+
+        <BackButton
+          label="Back to Applications"
+          fallbackPath="/applications"
+          ignoreHistory
+        />
       </div>
-      </div>
+    </div>
   );
 }
