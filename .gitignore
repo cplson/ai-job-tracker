@@ -30,6 +30,9 @@ docker-data/
 **/trivy-reports/
 **/zap-reports/
 
+# Test output
+**/TestResults/
+
 # Build output
 build/
 
