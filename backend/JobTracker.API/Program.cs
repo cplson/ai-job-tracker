@@ -133,6 +133,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         db.Database.EnsureCreated();
+        await DatabaseSchemaPatcher.ApplyAsync(db, logger);
         logger.LogInformation("Database schema ready.");
     }
     catch (Exception ex)
@@ -150,6 +151,24 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowFrontend");
 // app.UseHttpsRedirection();
+app.UseExceptionHandler(handler =>
+{
+    handler.Run(async context =>
+    {
+        var ex = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+        if (ex is UnauthorizedAccessException)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsync("Unauthorized");
+            return;
+        }
+
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Unhandled exception for {Method} {Path}", context.Request.Method, context.Request.Path);
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await context.Response.WriteAsync("Internal server error.");
+    });
+});
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

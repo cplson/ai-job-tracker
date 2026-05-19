@@ -26,25 +26,37 @@ public class ApplicationsController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetAll()
     {
-        var userId = JwtHelper.GetUserId(User);
+        try
+        {
+            var userId = JwtHelper.GetUserId(User);
 
-        var apps = await _context.Applications
-            .Where(a => a.UserId == userId)
-            .OrderByDescending(a => a.CreatedAt)
-            .Select(a => new ApplicationDetailDto
-            {
-                Id = a.Id,
-                Company = a.Company,
-                JobTitle = a.JobTitle,
-                JobDescription = a.JobDescription,
-                Status = a.Status,
-                CreatedAt = a.CreatedAt,
-                ResumeId = a.ResumeId,
-                ResumeFileName = a.Resume != null ? a.Resume.Name : null
-            })
-            .ToListAsync();
+            var apps = await _context.Applications
+                .Where(a => a.UserId == userId)
+                .OrderByDescending(a => a.CreatedAt)
+                .Select(a => new ApplicationDetailDto
+                {
+                    Id = a.Id,
+                    Company = a.Company,
+                    JobTitle = a.JobTitle,
+                    JobDescription = a.JobDescription,
+                    Status = a.Status,
+                    CreatedAt = a.CreatedAt,
+                    ResumeId = a.ResumeId,
+                    ResumeFileName = a.Resume != null ? a.Resume.Name : null
+                })
+                .ToListAsync();
 
-        return Ok(apps);
+            return Ok(apps);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list applications");
+            return StatusCode(500, "Internal server error");
+        }
     }
 
     [HttpGet("{id:guid}")]
