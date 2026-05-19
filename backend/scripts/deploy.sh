@@ -25,6 +25,7 @@ echo "==> Building API image"
 docker build -t jobtracker-api:latest .
 
 echo "==> Starting production stack"
+# --remove-orphans only affects this compose project (backend app), not SonarQube (project: sonarqube).
 docker compose \
   --env-file "${ENV_FILE}" \
   -f docker-compose.yml \

@@ -58,4 +58,12 @@ Next steps:
      ./scripts/run-sonar.sh
 
 Stop server: docker compose -f docker-compose.sonar.yml down
+
+If SonarQube stops after Deploy runs: deploy uses --remove-orphans on the app stack.
+  This compose file uses project name "sonarqube" so it is not removed. Recreate if needed:
+  docker compose -f docker-compose.sonar.yml up -d
+
+If the container was OOM-killed:
+  docker inspect sonarqube --format '{{.State.OOMKilled}}'
+  Consider 2G swap (see docker-compose.sonar.yml comments).
 EOF

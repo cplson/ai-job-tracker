@@ -25,6 +25,15 @@ if [[ -z "${SONAR_HOST_URL:-}" ]]; then
   exit 1
 fi
 
+SONAR_HOST_URL="${SONAR_HOST_URL%/}"
+status_url="${SONAR_HOST_URL}/api/system/status"
+if ! curl -sf "${status_url}" | grep -q '"status":"UP"'; then
+  echo "Cannot reach SonarQube at ${SONAR_HOST_URL} (expected GET ${status_url} -> status UP)." >&2
+  echo "On the server: docker compose -f docker-compose.sonar.yml ps && curl -sf http://127.0.0.1:9000/api/system/status" >&2
+  echo "If Jenkins runs on the same host, try SONAR_HOST_URL=http://127.0.0.1:9000 in Jenkins SonarQube server settings." >&2
+  exit 1
+fi
+
 export PATH="${PATH}:${HOME}/.dotnet/tools"
 
 if ! dotnet tool list -g | grep -q '^dotnet-sonarscanner'; then
