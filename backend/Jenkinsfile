@@ -27,41 +27,15 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    dir("${BACKEND_DIR}") {
-                        withSonarQubeEnv("${SONARQUBE_ENV}") {
-                            // Use a direct sh step (not inside script {}) so SONAR_HOST_URL / SONAR_AUTH_TOKEN reach the shell.
-                            sh 'chmod +x scripts/run-sonar.sh && ./scripts/run-sonar.sh'
-                            timeout(time: 5, unit: 'MINUTES') {
-                                waitForQualityGate abortPipeline: false
-                            }
-                        }
-                    }
-                }
-            }
-            post {
-                always {
-                    dir("${BACKEND_DIR}") {
-                        junit allowEmptyResults: true, testResults: 'JobTracker.Tests/TestResults/**/*.xml'
-                    }
-                }
-            }
-        }
-
-        // stage('Snyk SAST') {
+        // stage('SonarQube Analysis') {
         //     steps {
         //         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         //             dir("${BACKEND_DIR}") {
-        //                 withCredentials([string(credentialsId: "${SNYK_CRED_ID}", variable: 'SNYK_TOKEN')]) {
-        //                     script {
-        //                         def snykHome = tool name: "${SNYK_INSTALLATION}", type: 'io.snyk.jenkins.tools.SnykInstallation'
-        //                         sh """
-        //                             ${snykHome}/snyk-linux code test \\
-        //                               --json-file-output=snyk-sast-report.json \\
-        //                               --sarif-file-output=snyk-sast-report.sarif
-        //                         """
+        //                 withSonarQubeEnv("${SONARQUBE_ENV}") {
+        //                     // Use a direct sh step (not inside script {}) so SONAR_HOST_URL / SONAR_AUTH_TOKEN reach the shell.
+        //                     sh 'chmod +x scripts/run-sonar.sh && ./scripts/run-sonar.sh'
+        //                     timeout(time: 5, unit: 'MINUTES') {
+        //                         waitForQualityGate abortPipeline: false
         //                     }
         //                 }
         //             }
@@ -70,27 +44,53 @@ pipeline {
         //     post {
         //         always {
         //             dir("${BACKEND_DIR}") {
-        //                 archiveArtifacts artifacts: 'snyk-sast-report.*', allowEmptyArchive: true
+        //                 junit allowEmptyResults: true, testResults: 'JobTracker.Tests/TestResults/**/*.xml'
         //             }
         //         }
         //     }
         // }
 
-        // stage('Security Scan') {
-        //     steps {
-        //         dir("${BACKEND_DIR}") {
-        //             sh 'chmod +x scripts/run-owasp-zap.sh'
-        //             sh './scripts/run-owasp-zap.sh'
-        //         }
-        //     }
-        //     post {
-        //         always {
-        //             dir("${BACKEND_DIR}") {
-        //                 archiveArtifacts artifacts: 'zap-reports/zap-report.html', allowEmptyArchive: true
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Snyk SAST') {
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    dir("${BACKEND_DIR}") {
+                        withCredentials([string(credentialsId: "${SNYK_CRED_ID}", variable: 'SNYK_TOKEN')]) {
+                            script {
+                                def snykHome = tool name: "${SNYK_INSTALLATION}", type: 'io.snyk.jenkins.tools.SnykInstallation'
+                                sh """
+                                    ${snykHome}/snyk-linux code test \\
+                                      --json-file-output=snyk-sast-report.json \\
+                                      --sarif-file-output=snyk-sast-report.sarif
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    dir("${BACKEND_DIR}") {
+                        archiveArtifacts artifacts: 'snyk-sast-report.*', allowEmptyArchive: true
+                    }
+                }
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                dir("${BACKEND_DIR}") {
+                    sh 'chmod +x scripts/run-owasp-zap.sh'
+                    sh './scripts/run-owasp-zap.sh'
+                }
+            }
+            post {
+                always {
+                    dir("${BACKEND_DIR}") {
+                        archiveArtifacts artifacts: 'zap-reports/zap-report.html', allowEmptyArchive: true
+                    }
+                }
+            }
+        }
 
         stage('Docker Build') {
             steps {
@@ -100,23 +100,23 @@ pipeline {
             }
         }
 
-        // stage('Trivy Scan') {
-        //     steps {
-        //         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        //             dir("${BACKEND_DIR}") {
-        //                 sh 'chmod +x scripts/run-trivy.sh'
-        //                 sh './scripts/run-trivy.sh'
-        //             }
-        //         }
-        //     }
-        //     post {
-        //         always {
-        //             dir("${BACKEND_DIR}") {
-        //                 archiveArtifacts artifacts: 'trivy-reports/*', allowEmptyArchive: true
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Trivy Scan') {
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    dir("${BACKEND_DIR}") {
+                        sh 'chmod +x scripts/run-trivy.sh'
+                        sh './scripts/run-trivy.sh'
+                    }
+                }
+            }
+            post {
+                always {
+                    dir("${BACKEND_DIR}") {
+                        archiveArtifacts artifacts: 'trivy-reports/*', allowEmptyArchive: true
+                    }
+                }
+            }
+        }
 
         stage('Build Frontend') {
             steps {
