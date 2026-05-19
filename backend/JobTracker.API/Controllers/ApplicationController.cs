@@ -38,7 +38,9 @@ public class ApplicationsController : ControllerBase
                 JobTitle = a.JobTitle,
                 JobDescription = a.JobDescription,
                 Status = a.Status,
-                CreatedAt = a.CreatedAt
+                CreatedAt = a.CreatedAt,
+                ResumeId = a.ResumeId,
+                ResumeFileName = a.Resume != null ? a.Resume.Name : null
             })
             .ToListAsync();
 
