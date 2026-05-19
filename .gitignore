@@ -30,7 +30,8 @@ docker-data/
 **/trivy-reports/
 **/zap-reports/
 
-# Test output
+# SonarQube / test output
+.sonarqube/
 **/TestResults/
 
 # Build output

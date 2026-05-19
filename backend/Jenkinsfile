@@ -10,6 +10,10 @@ pipeline {
 
         TRIVY_SEVERITY = "HIGH,CRITICAL"
         JOBTRACKER_IMAGE = "jobtracker-api:latest"
+
+        // Jenkins SonarQube server name (Manage Jenkins -> System -> SonarQube servers)
+        SONARQUBE_ENV = "SonarQube"
+        SONAR_PROJECT_KEY = "jobtracker-backend"
     }
 
     stages {
@@ -23,30 +27,31 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('SonarQube Analysis') {
             steps {
-                dir("${BACKEND_DIR}") {
-                    sh 'dotnet restore JobTracker.sln'
-                    sh 'dotnet build JobTracker.sln --configuration Release'
-                }
-            }
-        }
-
-        stage('Test') {
-            steps {
-                dir("${BACKEND_DIR}") {
-                    sh '''
-                        dotnet test JobTracker.Tests/JobTracker.Tests.csproj \
-                          --settings JobTracker.Tests/test.runsettings \
-                          --results-directory JobTracker.Tests/TestResults \
-                          --logger "junit;LogFileName=test_results.xml"
-                    '''
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    dir("${BACKEND_DIR}") {
+                        withSonarQubeEnv("${SONARQUBE_ENV}") {
+                            sh 'chmod +x scripts/run-sonar.sh'
+                            sh './scripts/run-sonar.sh'
+                        }
+                    }
                 }
             }
             post {
                 always {
                     dir("${BACKEND_DIR}") {
-                        junit allowEmptyResults: false, testResults: 'JobTracker.Tests/TestResults/*.xml'
+                        junit allowEmptyResults: true, testResults: 'JobTracker.Tests/TestResults/**/*.xml'
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Quality Gate') {
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: false
                     }
                 }
             }
