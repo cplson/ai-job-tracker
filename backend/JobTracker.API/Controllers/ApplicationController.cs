@@ -1,5 +1,6 @@
 using JobTracker.Infrastructure;
 using JobTracker.Core.Entities;
+using JobTracker.API.DTOs;
 using JobTracker.API.DTOs.Resumes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +15,9 @@ namespace JobTracker.API.Controllers;
 [Authorize]
 public class ApplicationsController : ControllerBase
 {
+    private const int DefaultPageSize = 10;
+    private const int MaxPageSize = 50;
+
     private readonly AppDbContext _context;
     private readonly ILogger<ApplicationsController> _logger;
 
@@ -25,6 +29,9 @@ public class ApplicationsController : ControllerBase
 
     [HttpGet("me")]
     public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = DefaultPageSize,
+        [FromQuery] string? search = null,
         [FromQuery] string? sortBy = null,
         [FromQuery] bool sortDescending = false)
     {
@@ -32,10 +39,18 @@ public class ApplicationsController : ControllerBase
         {
             var userId = JwtHelper.GetUserId(User);
 
+            if (page < 1) page = 1;
+            pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+
             var query = _context.Applications.Where(a => a.UserId == userId);
+            query = ApplySearch(query, search);
             query = ApplySort(query, sortBy, sortDescending);
 
+            var totalCount = await query.CountAsync();
+
             var apps = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(a => new ApplicationDetailDto
                 {
                     Id = a.Id,
@@ -49,7 +64,16 @@ public class ApplicationsController : ControllerBase
                 })
                 .ToListAsync();
 
-            return Ok(apps);
+            var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            return Ok(new PagedResultDto<ApplicationDetailDto>
+            {
+                Items = apps,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages
+            });
         }
         catch (UnauthorizedAccessException)
         {
@@ -195,6 +219,23 @@ public class ApplicationsController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    private static IQueryable<Application> ApplySearch(IQueryable<Application> query, string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return query;
+
+        var term = search.Trim().ToLower();
+        var matchingStatuses = Enum.GetValues<ApplicationStatus>()
+            .Where(s => s.ToString().Contains(term, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return query.Where(a =>
+            a.Company.ToLower().Contains(term) ||
+            a.JobTitle.ToLower().Contains(term) ||
+            matchingStatuses.Contains(a.Status) ||
+            (a.Resume != null && a.Resume.Name.ToLower().Contains(term)));
     }
 
     private static IQueryable<Application> ApplySort(
