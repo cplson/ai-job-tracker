@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JobTracker.Infrastructure",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JobTracker.Tests", "JobTracker.Tests\JobTracker.Tests.csproj", "{04ED26A0-7640-40C8-ADF0-9F827F4FF161}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JobTracker.Seed", "JobTracker.Seed\JobTracker.Seed.csproj", "{0289EA4F-5207-4191-821E-F58924C84E6C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{04ED26A0-7640-40C8-ADF0-9F827F4FF161}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04ED26A0-7640-40C8-ADF0-9F827F4FF161}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{04ED26A0-7640-40C8-ADF0-9F827F4FF161}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0289EA4F-5207-4191-821E-F58924C84E6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0289EA4F-5207-4191-821E-F58924C84E6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0289EA4F-5207-4191-821E-F58924C84E6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0289EA4F-5207-4191-821E-F58924C84E6C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
