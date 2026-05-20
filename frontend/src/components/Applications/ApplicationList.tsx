@@ -5,6 +5,35 @@ import type { ApplicationDto } from '../../types';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
+type SortColumn = 'company' | 'jobTitle' | 'resumeFileName' | 'status';
+type SortDirection = 'asc' | 'desc';
+
+function compareApplications(
+  a: ApplicationDto,
+  b: ApplicationDto,
+  column: SortColumn,
+  direction: SortDirection
+): number {
+  let comparison = 0;
+  switch (column) {
+    case 'company':
+      comparison = a.company.localeCompare(b.company, undefined, { sensitivity: 'base' });
+      break;
+    case 'jobTitle':
+      comparison = a.jobTitle.localeCompare(b.jobTitle, undefined, { sensitivity: 'base' });
+      break;
+    case 'resumeFileName':
+      comparison = (a.resumeFileName ?? '').localeCompare(b.resumeFileName ?? '', undefined, {
+        sensitivity: 'base',
+      });
+      break;
+    case 'status':
+      comparison = a.status.localeCompare(b.status, undefined, { sensitivity: 'base' });
+      break;
+  }
+  return direction === 'asc' ? comparison : -comparison;
+}
+
 function matchesSearch(app: ApplicationDto, query: string): boolean {
   const q = query.toLowerCase();
   return (
@@ -19,6 +48,8 @@ export default function ApplicationList() {
   const [applications, setApplications] = useState<ApplicationDto[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [sortColumn, setSortColumn] = useState<SortColumn>('company');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const location = useLocation();
   const navigate = useNavigate();
   const [showSuccess, setShowSuccess] = useState<string | null>(null);
@@ -54,6 +85,26 @@ export default function ApplicationList() {
     if (!trimmed) return applications;
     return applications.filter(app => matchesSearch(app, trimmed));
   }, [applications, debouncedQuery]);
+
+  const sortedApplications = useMemo(() => {
+    return [...filteredApplications].sort((a, b) =>
+      compareApplications(a, b, sortColumn, sortDirection)
+    );
+  }, [filteredApplications, sortColumn, sortDirection]);
+
+  function handleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      setSortDirection(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  }
+
+  function sortIndicator(column: SortColumn) {
+    if (sortColumn !== column) return null;
+    return sortDirection === 'asc' ? ' ▲' : ' ▼';
+  }
 
   return (
     <div>
@@ -98,14 +149,32 @@ export default function ApplicationList() {
             <table className="table table-striped">
               <thead>
                 <tr>
-                  <th>Company</th>
-                  <th>Job Title</th>
-                  <th>Resume</th>
-                  <th>Status</th>
+                  {(
+                    [
+                      ['company', 'Company'],
+                      ['jobTitle', 'Job Title'],
+                      ['resumeFileName', 'Resume'],
+                      ['status', 'Status'],
+                    ] as const
+                  ).map(([column, label]) => (
+                    <th key={column}>
+                      <button
+                        type="button"
+                        className="btn btn-link p-0 text-decoration-none text-dark fw-bold border-0"
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleSort(column);
+                        }}
+                      >
+                        {label}
+                        {sortIndicator(column)}
+                      </button>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredApplications.map(app => (
+                {sortedApplications.map(app => (
                   <tr
                     key={app.id}
                     style={{ cursor: 'pointer' }}

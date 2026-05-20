@@ -24,15 +24,18 @@ public class ApplicationsController : ControllerBase
     }
 
     [HttpGet("me")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? sortBy = null,
+        [FromQuery] bool sortDescending = false)
     {
         try
         {
             var userId = JwtHelper.GetUserId(User);
 
-            var apps = await _context.Applications
-                .Where(a => a.UserId == userId)
-                .OrderByDescending(a => a.CreatedAt)
+            var query = _context.Applications.Where(a => a.UserId == userId);
+            query = ApplySort(query, sortBy, sortDescending);
+
+            var apps = await query
                 .Select(a => new ApplicationDetailDto
                 {
                     Id = a.Id,
@@ -192,5 +195,26 @@ public class ApplicationsController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    private static IQueryable<Application> ApplySort(
+        IQueryable<Application> query,
+        string? sortBy,
+        bool sortDescending)
+    {
+        return (sortBy?.ToLowerInvariant(), sortDescending) switch
+        {
+            ("company", false) => query.OrderBy(a => a.Company),
+            ("company", true) => query.OrderByDescending(a => a.Company),
+            ("jobtitle", false) => query.OrderBy(a => a.JobTitle),
+            ("jobtitle", true) => query.OrderByDescending(a => a.JobTitle),
+            ("status", false) => query.OrderBy(a => a.Status),
+            ("status", true) => query.OrderByDescending(a => a.Status),
+            ("resumefilename", false) => query.OrderBy(a => a.Resume != null ? a.Resume.Name : ""),
+            ("resumefilename", true) => query.OrderByDescending(a => a.Resume != null ? a.Resume.Name : ""),
+            ("createdat", false) => query.OrderBy(a => a.CreatedAt),
+            ("createdat", true) => query.OrderByDescending(a => a.CreatedAt),
+            _ => query.OrderByDescending(a => a.CreatedAt),
+        };
     }
 }
