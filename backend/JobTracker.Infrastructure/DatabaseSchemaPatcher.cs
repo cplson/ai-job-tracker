@@ -64,6 +64,9 @@ public static class DatabaseSchemaPatcher
             """,
             """
             CREATE INDEX IF NOT EXISTS "IX_AIJobs_ApplicationId" ON "AIJobs" ("ApplicationId");
+            """,
+            """
+            ALTER TABLE "AIJobs" ADD COLUMN IF NOT EXISTS "CreatedAt" timestamp with time zone NOT NULL DEFAULT NOW();
             """
         };
 

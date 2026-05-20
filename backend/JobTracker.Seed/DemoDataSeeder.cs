@@ -2,6 +2,7 @@ using JobTracker.Core.Entities;
 using JobTracker.Core.Enums;
 using JobTracker.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace JobTracker.Seed;
 
@@ -13,6 +14,7 @@ public static class DemoDataSeeder
     public static async Task<int> RunAsync(AppDbContext db, bool force, CancellationToken cancellationToken = default)
     {
         await db.Database.EnsureCreatedAsync(cancellationToken);
+        await DatabaseSchemaPatcher.ApplyAsync(db, NullLogger.Instance, cancellationToken);
 
         var existing = await db.Users
             .Include(u => u.Applications)
