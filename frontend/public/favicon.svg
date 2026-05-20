@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="JobTracker">
+  <rect width="32" height="32" rx="6" fill="#212529"/>
+  <rect x="8" y="8" width="16" height="18" rx="2" fill="#ffffff"/>
+  <rect x="12" y="5" width="8" height="5" rx="1.5" fill="#0d6efd"/>
+  <path d="M11 15h10M11 19h7" stroke="#212529" stroke-width="1.75" stroke-linecap="round"/>
+  <path d="M11 23l2.5 2.5L17 20" stroke="#0d6efd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
