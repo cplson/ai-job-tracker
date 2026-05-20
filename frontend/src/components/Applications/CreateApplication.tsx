@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import SubmitButton from "../Common/SubmitButton";
 import CancelButton from "../Common/CancelButton";
-import { ResumeDto, CreateApplicationForm } from "../../types";
+import { PagedResultDto, ResumeDto, CreateApplicationForm } from "../../types";
 import { getApiErrorMessage } from "../../utils/apiErrors";
 
 export default function CreateApplication() {
@@ -22,8 +22,10 @@ export default function CreateApplication() {
   useEffect(() => {
   async function fetchResumes() {
     try {
-      const res = await api.get<ResumeDto[]>('/resumes/me');
-      setResumes(res.data);
+      const res = await api.get<PagedResultDto<ResumeDto>>('/resumes/me', {
+        params: { page: 1, pageSize: 100 },
+      });
+      setResumes(res.data.items);
     } catch (err) {
       console.error("Failed to fetch resumes", err);
     }

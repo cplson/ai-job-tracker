@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import SubmitButton from "../Common/SubmitButton";
 import CancelButton from "../Common/CancelButton";
-import { ApplicationDto, ResumeDto } from "../../types";
+import { ApplicationDto, PagedResultDto, ResumeDto } from "../../types";
 import { getApiErrorMessage } from "../../utils/apiErrors";
 
 const APPLICATION_STATUSES = [
@@ -51,8 +51,10 @@ export default function EditApplication() {
 
     async function fetchResumes() {
       try {
-        const res = await api.get<ResumeDto[]>('/resumes/me');
-        setResumes(res.data);
+        const res = await api.get<PagedResultDto<ResumeDto>>('/resumes/me', {
+          params: { page: 1, pageSize: 100 },
+        });
+        setResumes(res.data.items);
       } catch (err) {
         console.error("Failed to fetch resumes", err);
       }

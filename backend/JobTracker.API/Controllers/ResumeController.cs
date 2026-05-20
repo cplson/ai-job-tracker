@@ -10,6 +10,7 @@
 using JobTracker.Infrastructure;
 using JobTracker.Core.Entities;
 using JobTracker.Core.Interfaces;
+using JobTracker.API.DTOs;
 using JobTracker.API.DTOs.Resumes;
 using JobTracker.API.Helpers;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,9 @@ namespace JobTracker.API.Controllers;
 [Authorize]
 public class ResumesController : ControllerBase
 {
+    private const int DefaultPageSize = 10;
+    private const int MaxPageSize = 50;
+
     private readonly AppDbContext _context;
     private readonly IResumeTextExtractor _resumeTextExtractor;
     private readonly ILogger<ResumesController> _logger;
@@ -99,17 +103,45 @@ public class ResumesController : ControllerBase
         return Ok(MapToDto(resume));
     }
 
-    // 📥 Get all resumes for current user
+    // 📥 Get all resumes for current user (paginated)
     [HttpGet("me")]
-    public async Task<ActionResult<IEnumerable<ReturnResumeDto>>> GetMyResumes()
+    public async Task<ActionResult<PagedResultDto<ReturnResumeDto>>> GetMyResumes(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = DefaultPageSize,
+        [FromQuery] string? search = null)
     {
         var userId = JwtHelper.GetUserId(User);
 
-        var resumes = await _context.Resumes
-            .Where(r => r.UserId == userId)
+        if (page < 1) page = 1;
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
+
+        var query = _context.Resumes.Where(r => r.UserId == userId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLower();
+            query = query.Where(r => r.Name.ToLower().Contains(term));
+        }
+
+        query = query.OrderByDescending(r => r.UploadedAt);
+
+        var totalCount = await query.CountAsync();
+
+        var resumes = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return Ok(resumes.Select(MapToDto));
+        var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return Ok(new PagedResultDto<ReturnResumeDto>
+        {
+            Items = resumes.Select(MapToDto).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalPages
+        });
     }
 
     // 📄 Get single resume
