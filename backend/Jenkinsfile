@@ -45,6 +45,8 @@ pipeline {
                 always {
                     dir("${BACKEND_DIR}") {
                         junit allowEmptyResults: true, testResults: 'JobTracker.Tests/TestResults/**/*.xml'
+                        archiveArtifacts artifacts: 'JobTracker.Tests/TestResults/**', allowEmptyArchive: true
+                        archiveArtifacts artifacts: '**/coverage.cobertura.xml', allowEmptyArchive: true
                     }
                 }
             }
@@ -62,7 +64,9 @@ pipeline {
                                       --json-file-output=snyk-sast-report.json \\
                                       --sarif-file-output=snyk-sast-report.sarif
                                     if [ -f snyk-sast-report.json ]; then
-                                      npx --yes snyk-to-html@3 -i snyk-sast-report.json -o snyk-sast-report.html || true
+                                      docker run --rm -v "\$(pwd):/work" -w /work node:20-alpine \\
+                                        sh -c 'npx --yes snyk-to-html@3 -i snyk-sast-report.json -o snyk-sast-report.html'
+                                      ls -la snyk-sast-report.html
                                     fi
                                 """
                             }
@@ -73,7 +77,7 @@ pipeline {
             post {
                 always {
                     dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'snyk-sast-report.{json,sarif,html}', allowEmptyArchive: true
+                        archiveArtifacts artifacts: 'snyk-sast-report.json,snyk-sast-report.sarif,snyk-sast-report.html', allowEmptyArchive: true
                     }
                 }
             }
@@ -89,7 +93,7 @@ pipeline {
             post {
                 always {
                     dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'zap-reports/zap-report.html', allowEmptyArchive: true
+                        archiveArtifacts artifacts: 'zap-reports/**', allowEmptyArchive: true
                     }
                 }
             }
@@ -115,7 +119,7 @@ pipeline {
             post {
                 always {
                     dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'trivy-reports/*.{json,sarif,html}', allowEmptyArchive: true
+                        archiveArtifacts artifacts: 'trivy-reports/*.html,trivy-reports/*.json,trivy-reports/*.sarif', allowEmptyArchive: true
                     }
                 }
             }
@@ -126,6 +130,13 @@ pipeline {
                 dir("${FRONTEND_DIR}") {
                     sh 'npm ci'
                     sh 'npm run build'
+                }
+            }
+            post {
+                always {
+                    dir("${FRONTEND_DIR}") {
+                        archiveArtifacts artifacts: 'dist/**', allowEmptyArchive: true
+                    }
                 }
             }
         }
@@ -142,6 +153,18 @@ pipeline {
                     sh 'docker image prune -f || true'
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            // Collect CI outputs from workspace (paths relative to repo root).
+            archiveArtifacts artifacts: "${BACKEND_DIR}/JobTracker.Tests/TestResults/**", allowEmptyArchive: true
+            archiveArtifacts artifacts: "${BACKEND_DIR}/**/coverage.cobertura.xml", allowEmptyArchive: true
+            archiveArtifacts artifacts: "${BACKEND_DIR}/snyk-sast-report.html,${BACKEND_DIR}/snyk-sast-report.json,${BACKEND_DIR}/snyk-sast-report.sarif", allowEmptyArchive: true
+            archiveArtifacts artifacts: "${BACKEND_DIR}/zap-reports/**", allowEmptyArchive: true
+            archiveArtifacts artifacts: "${BACKEND_DIR}/trivy-reports/*.html,${BACKEND_DIR}/trivy-reports/*.json,${BACKEND_DIR}/trivy-reports/*.sarif", allowEmptyArchive: true
+            archiveArtifacts artifacts: "${FRONTEND_DIR}/dist/**", allowEmptyArchive: true
         }
     }
 }

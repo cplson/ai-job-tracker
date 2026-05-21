@@ -56,7 +56,6 @@ run_fs_scan() {
     --scanners "${FS_SCANNERS}" \
     --format json \
     --output /reports/trivy-fs-report.json \
-    --exit-code 1 \
     /workspace
 
   trivy_docker fs \
@@ -64,6 +63,15 @@ run_fs_scan() {
     --scanners "${FS_SCANNERS}" \
     --format sarif \
     --output /reports/trivy-fs-report.sarif \
+    /workspace
+
+  # Fail CI on findings only after HTML/JSON/SARIF are written.
+  trivy_docker fs \
+    "${trivy_args[@]}" \
+    --scanners "${FS_SCANNERS}" \
+    --format json \
+    --output /dev/null \
+    --exit-code 1 \
     /workspace
 }
 
@@ -93,7 +101,6 @@ run_image_scan() {
     --scanners "${IMAGE_SCANNERS}" \
     --format json \
     --output /reports/trivy-image-report.json \
-    --exit-code 1 \
     "${DOCKER_IMAGE}"
 
   trivy_docker image \
@@ -101,6 +108,14 @@ run_image_scan() {
     --scanners "${IMAGE_SCANNERS}" \
     --format sarif \
     --output /reports/trivy-image-report.sarif \
+    "${DOCKER_IMAGE}"
+
+  trivy_docker image \
+    "${trivy_args[@]}" \
+    --scanners "${IMAGE_SCANNERS}" \
+    --format json \
+    --output /dev/null \
+    --exit-code 1 \
     "${DOCKER_IMAGE}"
 }
 
