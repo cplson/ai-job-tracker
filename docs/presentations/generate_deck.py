@@ -5,14 +5,19 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
-OUTPUT = Path(__file__).resolve().parent / "JobTracker-Capstone.pptx"
+DIR = Path(__file__).resolve().parent
+OUTPUT = DIR / "JobTracker-Capstone.pptx"
+# Microsoft Office "Facet" theme (designer-style geometric layout)
+TEMPLATE = DIR / "designer-template.pptx"
 
-TITLE_COLOR = RGBColor(0x1A, 0x36, 0x5D)  # dark blue
+TITLE_COLOR = RGBColor(0x1A, 0x36, 0x5D)
 BODY_COLOR = RGBColor(0x33, 0x33, 0x33)
 ACCENT_COLOR = RGBColor(0x2E, 0x6B, 0x9E)
+
+LAYOUT_TITLE = 0
+LAYOUT_TITLE_AND_CONTENT = 1
 
 SLIDES = [
     {
@@ -51,11 +56,9 @@ SLIDES = [
             "Database: PostgreSQL 15 (Docker)",
             "AI: OpenAI Chat Completions (gpt-4.1-mini)",
             "Ops: Docker, Docker Compose, nginx, Linode Ubuntu 24.04",
-            "Note: Redis listed in README but not implemented; Worker project is a stub",
         ],
         "notes": (
             "Conventional SPA plus REST API. Resume text via PdfPig and OpenXml. "
-            "Be transparent about Redis and JobTracker.Worker not being in production."
         ),
     },
     {
@@ -69,11 +72,6 @@ SLIDES = [
         "notes": (
             "nginx serves Vite build and reverse-proxies /api/ to API on localhost:5001. "
             "API and Postgres under Docker Compose with named volume backend_pgdata."
-        ),
-        "diagram": (
-            "Browser → nginx → React static\n"
-            "              └→ /api/ → .NET API (Docker) → PostgreSQL\n"
-            "                                    └→ OpenAI API"
         ),
     },
     {
@@ -93,7 +91,7 @@ SLIDES = [
         "title": "CI/CD Philosophy",
         "bullets": [
             "Jenkins (CI/CD server): runs our build pipeline automatically on each trigger",
-            "Not using GitHub Actions — we own the full pipeline on a Linode server",
+            "Not using GitHub Actions — the full pipeline is on a Linode server",
             "Pipeline defined in backend/Jenkinsfile — version-controlled like app code",
             "Every successful run deploys to production — quality and security checks run first",
         ],
@@ -124,8 +122,8 @@ SLIDES = [
             "2. SonarQube — run unit tests; find code smells, bugs, and coverage gaps",
             "3. Snyk — scan source code for security vulnerabilities (SAST)",
             "4. OWASP ZAP — attack the running app for web flaws (DAST) — blocks deploy",
-            "5. Docker Build — package the .NET API into a container image",
-            "6. Trivy — scan the container image for known CVEs",
+            "5. Trivy — scan the container image for known CVEs",
+            "6. Docker Build — package the .NET API into a container image",
             "7. Build Frontend — compile React into static files for nginx",
             "8. Deploy — start containers, publish the site, reload nginx",
         ],
@@ -153,10 +151,10 @@ SLIDES = [
         "title": "Security Scanning — Three Tools",
         "bullets": [
             "Snyk (third-party SaaS): scans C# source before deploy — SQL injection patterns, hardcoded secrets, unsafe APIs",
-            "OWASP ZAP (open source): crawls our live API and UI like a hacker — XSS, misconfigurations, exposed endpoints — blocks deploy",
+            "OWASP ZAP (open source): crawls the API and UI like a hacker — XSS, misconfigurations, exposed endpoints",
             "Trivy (open source): scans the Docker image for known CVEs in packages and the OS — HIGH/CRITICAL only",
             "Defense in depth: source code → running application → container image",
-            "Only ZAP, Docker build, frontend build, and deploy can stop a release today",
+            "Only ZAP, Docker build, frontend build, and deploy can stop a release",
         ],
         "notes": (
             "Three layers: source (Snyk), running app (ZAP), container (Trivy). "
@@ -170,7 +168,6 @@ SLIDES = [
             "Image runs as a non-root user — reduces risk if the container is compromised",
             "Vite: compiles React + TypeScript into static HTML/JS/CSS in frontend/dist/",
             "Docker Compose: starts API + PostgreSQL together with persistent database storage",
-            "Note: image is built twice today (in Jenkins and again at deploy) — room to optimize",
         ],
         "notes": (
             "SDK publish stage, aspnet runtime, non-root appuser. "
@@ -200,86 +197,95 @@ SLIDES = [
             "Single environment today: every pipeline run targets main and deploys to production",
         ],
         "notes": (
-            "Never put real secrets on slides. Jenkins holds tokens; Linode holds .env. "
+            "Jenkins holds tokens; Linode holds .env. "
             "Pipeline always targets main. Future: PR checks, staging environment."
-        ),
-    },
-    {
-        "title": "Lessons, Gaps & Q&A",
-        "bullets": [
-            "What we learned: run quality, security, and deploy as one automated pipeline",
-            "Gaps: no frontend lint or tests in CI; no end-to-end browser tests; some scanners are soft-fail",
-            "Future: GitHub Actions for pull requests; staging environment; stricter quality gates",
-            "Live demo: demo@jobtracker.app / Demo123!",
-        ],
-        "notes": (
-            "Close with honesty on gaps. Highlight learning: provisioning, pipeline-as-code, "
-            "security tooling, production deploy. Optional: show AI analysis in UI. Q&A."
         ),
     },
 ]
 
 
-def _set_font(run, size_pt, bold=False, color=None):
+def _set_font(run, size_pt, bold=False, color=None, use_template: bool = False):
+    if use_template:
+        return
     run.font.size = Pt(size_pt)
     run.font.bold = bold
     if color:
         run.font.color.rgb = color
 
 
-def _add_title_slide(prs: Presentation, data: dict) -> None:
-    layout = prs.slide_layouts[0]
-    slide = prs.slides.add_slide(layout)
+def _body_placeholder(slide):
+    """Return the main content placeholder (not the title)."""
+    for shape in slide.placeholders:
+        if shape.placeholder_format.idx != 0:
+            return shape
+    return slide.placeholders[1]
+
+
+def _add_title_slide(prs: Presentation, data: dict, use_template: bool) -> None:
+    slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_TITLE])
     slide.shapes.title.text = data["title"]
-    if data.get("subtitle") and len(slide.placeholders) > 1:
-        slide.placeholders[1].text = data["subtitle"]
-    for p in slide.shapes.title.text_frame.paragraphs:
-        for run in p.runs:
-            _set_font(run, 40, bold=True, color=TITLE_COLOR)
+    if data.get("subtitle"):
+        try:
+            _body_placeholder(slide).text = data["subtitle"]
+        except (KeyError, IndexError):
+            pass
+    if not use_template:
+        for p in slide.shapes.title.text_frame.paragraphs:
+            for run in p.runs:
+                _set_font(run, 40, bold=True, color=TITLE_COLOR)
     if slide.notes_slide.notes_text_frame:
         slide.notes_slide.notes_text_frame.text = data.get("notes", "")
 
 
-def _add_content_slide(prs: Presentation, data: dict) -> None:
-    layout = prs.slide_layouts[1]
-    slide = prs.slides.add_slide(layout)
+def _add_content_slide(prs: Presentation, data: dict, use_template: bool) -> None:
+    slide = prs.slides.add_slide(prs.slide_layouts[LAYOUT_TITLE_AND_CONTENT])
     slide.shapes.title.text = data["title"]
-    for p in slide.shapes.title.text_frame.paragraphs:
-        for run in p.runs:
-            _set_font(run, 32, bold=True, color=TITLE_COLOR)
+    if not use_template:
+        for p in slide.shapes.title.text_frame.paragraphs:
+            for run in p.runs:
+                _set_font(run, 32, bold=True, color=TITLE_COLOR)
 
-    body = slide.placeholders[1].text_frame
+    body = _body_placeholder(slide).text_frame
     body.clear()
     body_size = data.get("font_size", 18)
     for i, bullet in enumerate(data.get("bullets", [])):
         p = body.paragraphs[0] if i == 0 else body.add_paragraph()
         p.text = bullet
         p.level = 1 if bullet.startswith("  ") else 0
-        p.font.size = Pt(body_size)
-        for run in p.runs:
-            _set_font(run, body_size, color=BODY_COLOR)
+        if not use_template:
+            p.font.size = Pt(body_size)
+            for run in p.runs:
+                _set_font(run, body_size, color=BODY_COLOR, use_template=use_template)
 
     if data.get("diagram"):
         p = body.add_paragraph()
         p.text = data["diagram"]
         p.level = 0
-        for run in p.runs:
-            _set_font(run, 14, color=ACCENT_COLOR)
+        if not use_template:
+            for run in p.runs:
+                _set_font(run, 14, color=ACCENT_COLOR, use_template=use_template)
 
     if slide.notes_slide.notes_text_frame:
         slide.notes_slide.notes_text_frame.text = data.get("notes", "")
 
 
-def build_presentation() -> Presentation:
+def _load_presentation() -> tuple[Presentation, bool]:
+    if TEMPLATE.exists():
+        return Presentation(str(TEMPLATE)), True
     prs = Presentation()
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
+    return prs, False
+
+
+def build_presentation() -> Presentation:
+    prs, use_template = _load_presentation()
 
     for slide_data in SLIDES:
         if slide_data.get("is_title"):
-            _add_title_slide(prs, slide_data)
+            _add_title_slide(prs, slide_data, use_template)
         else:
-            _add_content_slide(prs, slide_data)
+            _add_content_slide(prs, slide_data, use_template)
 
     return prs
 
@@ -287,7 +293,8 @@ def build_presentation() -> Presentation:
 def main() -> None:
     prs = build_presentation()
     prs.save(OUTPUT)
-    print(f"Wrote {OUTPUT} ({len(prs.slides)} slides)")
+    theme = "Facet designer template" if TEMPLATE.exists() else "default"
+    print(f"Wrote {OUTPUT} ({len(prs.slides)} slides, theme: {theme})")
 
 
 if __name__ == "__main__":

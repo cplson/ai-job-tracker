@@ -24,7 +24,6 @@ Open with the problem: job seekers juggle many applications across spreadsheets 
 - Register and login with JWT authentication
 - CRUD job applications with status workflow (Draft → Applied → Interviewing → Offer → Rejected)
 - Upload resumes (PDF, DOCX, plain text)
-- AI analysis: summary, strengths, weaknesses, suggestions, match score
 
 **Speaker notes (~45s):**  
 Walk through the user journey: sign up, add applications, upload a resume, link it to an application, run AI analysis. For a live demo, seed data first from `backend/` with `./scripts/seed-demo-data.sh`, then sign in as `demo@jobtracker.app` with password `Demo123!` — that account has sample applications and analyses ready to show.
