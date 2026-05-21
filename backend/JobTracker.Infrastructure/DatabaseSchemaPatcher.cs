@@ -11,6 +11,12 @@ public static class DatabaseSchemaPatcher
 {
     public static async Task ApplyAsync(AppDbContext db, ILogger logger, CancellationToken cancellationToken = default)
     {
+        if (!db.Database.IsRelational())
+        {
+            logger.LogDebug("Skipping database schema patches (non-relational provider).");
+            return;
+        }
+
         var patches = new[]
         {
             """

@@ -8,6 +8,7 @@ BACKEND_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${BACKEND_DIR}"
 
 TRIVY_IMAGE="${TRIVY_IMAGE:-aquasec/trivy:latest}"
+TRIVY_HTML_TEMPLATE="${TRIVY_HTML_TEMPLATE:-${SCRIPT_DIR}/trivy-html.tpl}"
 DOCKER_IMAGE="${JOBTRACKER_IMAGE:-jobtracker-api:latest}"
 SEVERITY="${TRIVY_SEVERITY:-HIGH,CRITICAL}"
 REPORT_DIR="${TRIVY_REPORT_DIR:-${BACKEND_DIR}/trivy-reports}"
@@ -29,6 +30,7 @@ trivy_docker() {
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${BACKEND_DIR}:/workspace:ro" \
     -v "${REPORT_DIR}:/reports:rw" \
+    -v "${TRIVY_HTML_TEMPLATE}:/templates/trivy-html.tpl:ro" \
     "${TRIVY_IMAGE}" \
     "$@"
 }
@@ -39,6 +41,14 @@ run_fs_scan() {
     "${trivy_args[@]}" \
     --scanners "${FS_SCANNERS}" \
     --format table \
+    /workspace
+
+  trivy_docker fs \
+    "${trivy_args[@]}" \
+    --scanners "${FS_SCANNERS}" \
+    --format template \
+    --template "@/templates/trivy-html.tpl" \
+    --output /reports/trivy-fs-report.html \
     /workspace
 
   trivy_docker fs \
@@ -73,6 +83,14 @@ run_image_scan() {
   trivy_docker image \
     "${trivy_args[@]}" \
     --scanners "${IMAGE_SCANNERS}" \
+    --format template \
+    --template "@/templates/trivy-html.tpl" \
+    --output /reports/trivy-image-report.html \
+    "${DOCKER_IMAGE}"
+
+  trivy_docker image \
+    "${trivy_args[@]}" \
+    --scanners "${IMAGE_SCANNERS}" \
     --format json \
     --output /reports/trivy-image-report.json \
     --exit-code 1 \
@@ -94,4 +112,4 @@ if [[ "${SCAN_IMAGE}" == "true" ]]; then
   run_image_scan
 fi
 
-echo "Trivy scans finished. Reports: ${REPORT_DIR}/"
+echo "Trivy scans finished. Reports: ${REPORT_DIR}/ (HTML: trivy-fs-report.html, trivy-image-report.html)"

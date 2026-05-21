@@ -61,6 +61,9 @@ pipeline {
                                     ${snykHome}/snyk-linux code test \\
                                       --json-file-output=snyk-sast-report.json \\
                                       --sarif-file-output=snyk-sast-report.sarif
+                                    if [ -f snyk-sast-report.json ]; then
+                                      npx --yes snyk-to-html@3 -i snyk-sast-report.json -o snyk-sast-report.html || true
+                                    fi
                                 """
                             }
                         }
@@ -70,7 +73,7 @@ pipeline {
             post {
                 always {
                     dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'snyk-sast-report.*', allowEmptyArchive: true
+                        archiveArtifacts artifacts: 'snyk-sast-report.{json,sarif,html}', allowEmptyArchive: true
                     }
                 }
             }
@@ -112,7 +115,7 @@ pipeline {
             post {
                 always {
                     dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'trivy-reports/*', allowEmptyArchive: true
+                        archiveArtifacts artifacts: 'trivy-reports/*.{json,sarif,html}', allowEmptyArchive: true
                     }
                 }
             }
