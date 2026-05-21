@@ -6,7 +6,6 @@ Tech stack:
 - .NET Web API
 - React
 - PostgreSQL
-- Redis
 - Docker
 - OpenAI API
 
