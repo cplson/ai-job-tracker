@@ -21,8 +21,37 @@ set -a
 source "${ENV_FILE}"
 set +a
 
-echo "==> Building API image"
-docker build -t jobtracker-api:latest .
+IMAGE_TAG="${JOBTRACKER_IMAGE:-jobtracker-api:latest}"
+# DEPLOY_BUILD: auto (default) builds only when the image is missing so the CI
+# pipeline reuses the image already built+scanned by the Docker Build/Trivy stages;
+# "true" forces a rebuild; "false" requires a pre-existing image.
+DEPLOY_BUILD="${DEPLOY_BUILD:-auto}"
+
+image_exists() {
+  docker image inspect "${IMAGE_TAG}" >/dev/null 2>&1
+}
+
+case "${DEPLOY_BUILD}" in
+  true|1)
+    echo "==> Building API image (${IMAGE_TAG}) [DEPLOY_BUILD=${DEPLOY_BUILD}]"
+    docker build -t "${IMAGE_TAG}" .
+    ;;
+  false|0)
+    if ! image_exists; then
+      echo "DEPLOY_BUILD=${DEPLOY_BUILD} but image ${IMAGE_TAG} is missing. Build it first." >&2
+      exit 1
+    fi
+    echo "==> Reusing existing API image (${IMAGE_TAG}); build disabled."
+    ;;
+  *)
+    if image_exists; then
+      echo "==> Reusing existing API image (${IMAGE_TAG}) from the build pipeline."
+    else
+      echo "==> API image ${IMAGE_TAG} not found; building."
+      docker build -t "${IMAGE_TAG}" .
+    fi
+    ;;
+esac
 
 echo "==> Starting production stack"
 COMPOSE=(docker compose -p jobtracker --env-file "${ENV_FILE}" -f docker-compose.yml -f docker-compose.prod.yml)

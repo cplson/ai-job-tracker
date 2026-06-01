@@ -27,6 +27,30 @@ pipeline {
             }
         }
 
+        stage('Docker Build') {
+            steps {
+                dir("${BACKEND_DIR}") {
+                    sh 'docker build -t jobtracker-api:latest .'
+                }
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    sh 'npm ci'
+                    sh 'npm run build'
+                }
+            }
+            post {
+                always {
+                    dir("${FRONTEND_DIR}") {
+                        archiveArtifacts artifacts: 'dist/**', allowEmptyArchive: true
+                    }
+                }
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -83,30 +107,6 @@ pipeline {
             }
         }
 
-        stage('Security Scan') {
-            steps {
-                dir("${BACKEND_DIR}") {
-                    sh 'chmod +x scripts/run-owasp-zap.sh'
-                    sh './scripts/run-owasp-zap.sh'
-                }
-            }
-            post {
-                always {
-                    dir("${BACKEND_DIR}") {
-                        archiveArtifacts artifacts: 'zap-reports/**', allowEmptyArchive: true
-                    }
-                }
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
-                dir("${BACKEND_DIR}") {
-                    sh 'docker build -t jobtracker-api:latest .'
-                }
-            }
-        }
-
         stage('Trivy Scan') {
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -125,17 +125,17 @@ pipeline {
             }
         }
 
-        stage('Build Frontend') {
+        stage('Security Scan') {
             steps {
-                dir("${FRONTEND_DIR}") {
-                    sh 'npm ci'
-                    sh 'npm run build'
+                dir("${BACKEND_DIR}") {
+                    sh 'chmod +x scripts/run-owasp-zap.sh'
+                    sh './scripts/run-owasp-zap.sh'
                 }
             }
             post {
                 always {
-                    dir("${FRONTEND_DIR}") {
-                        archiveArtifacts artifacts: 'dist/**', allowEmptyArchive: true
+                    dir("${BACKEND_DIR}") {
+                        archiveArtifacts artifacts: 'zap-reports/**', allowEmptyArchive: true
                     }
                 }
             }
